@@ -1,0 +1,2 @@
+# Ignorar todo entorno virtual llamado "venv" 
+venv/
