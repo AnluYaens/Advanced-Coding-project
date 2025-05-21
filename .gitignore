@@ -1,2 +1,46 @@
-# Ignorar todo entorno virtual llamado "venv" 
+# —— Entorno virtual ————————————————————————————————
 venv/
+.env/         # a veces el entorno virtual se llama así
+
+# —— Bases de datos SQLite y derivados ————————————————————
+# Ignora cualquier fichero .db
+*.db
+# También los archivos temporales de SQLite
+*.db-shm
+*.db-wal
+
+# —— Cachés y archivos compilados de Python ————————————
+__pycache__/
+*.py[cod]     # .pyc, .pyo, .pyd
+*$py.class
+
+# —— Configuración local y logs ——————————————————————
+.env          # variables de entorno
+*.log         # logs
+# Cobertura de tests
+.coverage
+htmlcov/      # informe HTML de cobertura
+
+# —— Testing y linters ——————————————————————————
+.pytest_cache/       # caché de pytest
+.tox/                # entornos creados por tox
+.mypy_cache/         # caché de mypy
+.cache/              # cachés varios (pip, sonar, etc.)
+
+# —— Artefactos de distribución ——————————————————————
+build/
+dist/
+*.egg-info/          # metadatos de paquetes
+pip-wheel-metadata/
+*.egg
+
+# —— Configuración de IDE (si aplica) ——————————————————
+.vscode/
+.idea/
+# Otros editores
+*.swp       # swap de vim
+*.swo
+
+# —— Sistema operativo ——————————————————————————
+.DS_Store   # macOS
+Thumbs.db   # Windows
