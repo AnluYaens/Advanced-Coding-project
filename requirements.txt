@@ -1,7 +1,9 @@
-ctkchart==2.1.8
-customtkinter==5.2.2
-matplotlib==3.10.3
-openai==1.79.0
-Requests==2.32.3
-SQLAlchemy==2.0.41
-tkcalendar==1.6.1
+customtkinter==5.2.0
+matplotlib==3.7.2
+numpy==1.24.3
+scipy==1.11.1
+sqlalchemy==2.0.19
+google-generativeai==0.3.0
+python-dotenv==1.0.0
+requests==2.31.0
+tkinter

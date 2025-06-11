@@ -1,7 +1,7 @@
 # —— Entorno virtual ————————————————————————————————
 venv/
 .env/         # a veces el entorno virtual se llama así
-
+.env
 # —— Bases de datos SQLite y derivados ————————————————————
 # Ignora cualquier fichero .db
 *.db
@@ -44,3 +44,6 @@ pip-wheel-metadata/
 # —— Sistema operativo ——————————————————————————
 .DS_Store   # macOS
 Thumbs.db   # Windows
+
+
+

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from .database import Base
+from .database_anterior import Base
 from datetime import datetime
 
 class Expense(Base):
