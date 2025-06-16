@@ -34,6 +34,14 @@ try:
     PDF_SUPPORT = True
 except ImportError:
     print("Warning: bank_statement_loader_pdf not available")
+
+"""
+File structure:
+- BudgetApp class: Main GUI and application logic.
+- AddExpenseDialog class: Manual expense input dialog.
+- ChatWindow class: AI assistant interaction.
+- Helper methods: Data visualization, currency conversion, and data management.
+"""
     
 # ───────────────────────────────── THEME HANDLING ─────────────────────────
 # Define ALL hex colors in a single dictionary
@@ -254,7 +262,10 @@ class BudgetApp(ctk.CTk):
 
     # ───────────────────────── LINE CHART ───────────────────────────────
     def show_line_chart(self, parent):
-        """Display line chart showing expenses by month"""
+        """Display line chart showing expenses by month
+        Args:
+        parent (tk.Frame): The parent widget in which the chart will be embedded.
+        """
         try:
             months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
             data = self.get_expenses_by_month()
@@ -364,7 +375,10 @@ class BudgetApp(ctk.CTk):
 
     #  ───────────────────────── Donut CHART ───────────────────────────────
     def show_donut_chart(self, parent):
-        """Display donut chart showing expenses by category"""
+        """Display donut chart showing expenses by category
+        Args:
+        parent (tk.Frame): The parent widget in which the chart will be embedded.
+        """
         try:
             categories = ["Groceries", "Electronics", "Entertainment", "Other"]
             vals = self.get_expenses_by_category()
@@ -562,7 +576,16 @@ class BudgetApp(ctk.CTk):
         self._update_conversion()
 
     def _convert_currency(self, amount: float, from_curr: str, to_curr: str):
-        """Use service.currency_api.get_exchange_rate."""
+        """Convert amount from one currency to another using an external currency API.
+    
+    Args:
+        amount (float): The amount to be converted.
+        from_curr (str): Source currency code (e.g., 'USD').
+        to_curr (str): Target currency code (e.g., 'EUR').
+
+    Returns:
+        tuple: (converted amount (float), conversion rate (float))
+    """
         if from_curr == to_curr:
             return amount, 1.0
 
@@ -704,7 +727,12 @@ class BudgetApp(ctk.CTk):
 
 #  ───────────────────────── AddExpenseDialog Class ─────────────────────────────── 
 class AddExpenseDialog(ctk.CTkToplevel):
-    """Dialog window for adding new expenses"""
+    """Dialog window allowing users to input new expenses manually.
+    
+        Args:
+            parent (BudgetApp): Reference to the main application.
+            on_saved (callable): Callback to refresh main UI after saving expense.
+    """
     def __init__(self, parent: BudgetApp, on_saved):
         super().__init__(parent)
         self.title("Add Expense")
@@ -859,7 +887,14 @@ class AddExpenseDialog(ctk.CTkToplevel):
 
 # ───────────────────────────── CHAT WINDOW ───────────────────────────────────
 class ChatWindow(ctk.CTkToplevel):
-    """AI Assistant chat window"""
+    """Interactive window enabling user conversations with the integrated AI assistant.
+    
+    This window supports AI-assisted budget management tasks such as adding, querying,
+    and importing expenses through natural language interaction.
+    
+    Args:
+        parent (BudgetApp): Reference to the main application window.
+    """
     def __init__(self, parent: BudgetApp):
         super().__init__(parent)
         self.title("AI Assistant")
