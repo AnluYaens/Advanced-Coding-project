@@ -1,37 +1,38 @@
-💰 AI Budget Tracker
-An advanced budget tracking application with integrated AI assistant, interactive visualizations, and intelligent expense management.
+# 💰 AI Budget Tracker
 
-✨ Features
+**An advanced budget tracking application with integrated AI assistant, interactive visualizations, and intelligent expense management.**
 
-🤖 AI Assistant – Log expenses in natural language using Google Gemini
-📊 Interactive Visualizations – Line and donut charts for expense analysis
-💱 Currency Converter – Real-time exchange rates
-📄 Automatic Import – Reads CSV and PDF bank statements
-📀 Local Database – SQLite with SQLAlchemy ORM
-🎨 Modern Interface – Dark-themed design with CustomTkinter
+## ✨ Features
 
-📋 Prerequisites
+* 🤖 **AI Assistant** – Log expenses in natural language using Google Gemini.
+* 📊 **Interactive Visualizations** – Line and donut charts for expense analysis.
+* 💱 **Currency Converter** – Real-time exchange rates.
+* 📄 **Automatic Import** – Reads CSV and PDF bank statements.
+* 📀 **Local Database** – SQLite with SQLAlchemy ORM.
+* 🎨 **Modern Interface** – Dark-themed design with CustomTkinter.
+
+## 📋 Prerequisites
 
 * Python 3.11 (exact version required)
 * pip (Python package manager)
 * Google AI Studio account to obtain API key
 
-🚀 Installation
+## 🚀 Installation
 
-1. Clone the repository
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/yourusername/ai-budget-tracker.git
 cd ai-budget-tracker
 ```
 
-2. Create a virtual environment with Python 3.11
+**2. Create a virtual environment with Python 3.11**
 
 ```bash
-# Make sure Python 3.11 is installed
+# Verify Python 3.11 installation
 py -3.11 --version
 
-# Create environment
+# Create virtual environment
 py -3.11 -m venv venv311
 
 # Activate on Windows
@@ -41,13 +42,13 @@ venv311\Scripts\activate
 source venv311/bin/activate
 ```
 
-3. Install dependencies
+**3. Install dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Configure Environment Variables
+**4. Configure Environment Variables**
 
 Create a `.env` file (you can copy from `.env.example`) and fill in the required values:
 
@@ -67,38 +68,38 @@ LOG_LEVEL=INFO
 # DATABASE_URL=postgresql://user:password@localhost/budget_db
 ```
 
-You can register for a free API key:
+Register for free API keys:
 
-* Google Gemini: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-* Exchange rate API: [https://app.exchangerate-api.com/sign-up](https://app.exchangerate-api.com/sign-up)
+* [Google Gemini](https://aistudio.google.com/app/apikey)
+* [Exchange rate API](https://app.exchangerate-api.com/sign-up)
 
-5. Run the application
+**5. Run the application**
 
 ```bash
 python -m src.main
 ```
 
-🎮 Usage
+## 🎮 Usage
 
-#### AI Assistant Commands
+### AI Assistant Commands
 
-The assistant understands natural commands like:
+The assistant understands commands like:
 
 * "Record a \$50 expense for groceries"
 * "Add \$120 for electronics, it was headphones"
 * "How much have I spent on entertainment?"
 * "Delete the expense with ID 5"
 
-#### Main Features
+### Main Features
 
-* **Add Expense**: Register new expenses with category and description
-* **Expense Analysis**: View detailed summaries and charts
-* **Set Budget**: Define monthly limits per category
-* **Import Statements**: Load CSV or PDF files automatically
+* **Add Expense**: Register new expenses with category and description.
+* **Expense Analysis**: View detailed summaries and charts.
+* **Set Budget**: Define monthly limits per category.
+* **Import Statements**: Automatically load CSV or PDF files.
 
-#### CSV Import Format
+### CSV Import Format
 
-CSV files must contain the following columns:
+CSV files must have:
 
 ```csv
 Date,Category,Description,Amount
@@ -106,24 +107,23 @@ Date,Category,Description,Amount
 2024-01-16,Entertainment,Cinema,25.00
 ```
 
-🛠️ Troubleshooting
+## 🛠️ Troubleshooting
 
-**Error: "Missing GOOGLE\_API\_KEY"**
+**Missing GOOGLE\_API\_KEY**
 
-* Make sure you created a `.env` file (not just `.env.example`)
-* Verify the API key is correctly pasted
+* Ensure `.env` exists and has the correct API key.
 
 **PDF Import Error**
 
-* Install `pdfplumber` if not already installed: `pip install pdfplumber`
+* Install `pdfplumber`: `pip install pdfplumber`
 
 **App won’t start**
 
-* Ensure you are using **Python 3.11** (not 3.12+ or 3.10)
-* Check that the virtual environment is activated (`venv311`)
+* Use Python 3.11 specifically.
+* Activate virtual environment (`venv311`).
 * Reinstall dependencies: `pip install -r requirements.txt --force-reinstall`
 
-📁 Project Structure
+## 📁 Project Structure
 
 ```
 Advanced Coding project/
@@ -151,36 +151,33 @@ Advanced Coding project/
 🔼️ budget_tracker.db-wal / .db-shm # SQLite WAL files
 ```
 
-🔒 Security
+## 🔒 Security
 
-* API keys are stored in local `.env` files (never pushed to GitHub)
-* Database is local (SQLite by default)
-* Only external services used:
+* API keys stored locally, not committed.
+* SQLite database stored locally.
 
-  * Google Gemini (for AI)
-  * Exchange rate API (for currency conversion)
+## 🤝 Contributing
 
-🤝 Contributing
-Contributions are welcome! Please:
+Contributions welcome! Follow these steps:
 
-* Fork the project
-* Create a feature branch: `git checkout -b feature/NewFeature`
-* Commit your changes: `git commit -m 'Add new feature'`
-* Push your branch: `git push origin feature/NewFeature`
-* Open a Pull Request
+* Fork the project.
+* Create branch: `git checkout -b feature/NewFeature`
+* Commit changes: `git commit -m 'Add new feature'`
+* Push branch: `git push origin feature/NewFeature`
+* Open a Pull Request.
 
-📄 License
-This project is licensed under the MIT License. See the LICENSE file for details.
+## 📄 License
 
-🙏 Acknowledgments
+Licensed under the MIT License.
+
+## 🙏 Acknowledgments
 
 * CustomTkinter – Modern UI toolkit
 * Google Gemini – Natural language AI
 * Matplotlib – Charts and visualizations
 * SQLAlchemy – Database ORM
 
-📞 Support
-If you encounter issues or have suggestions:
+## 📞 Support
 
-* Open an issue on GitHub
-* Contact the developer
+* Open an issue on GitHub.
+* Contact the developer directly.
