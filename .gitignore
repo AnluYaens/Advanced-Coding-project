@@ -1,5 +1,6 @@
 # —— Entorno virtual ————————————————————————————————
 venv/
+venv311/
 .env/         # a veces el entorno virtual se llama así
 .env
 # —— Bases de datos SQLite y derivados ————————————————————

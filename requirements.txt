@@ -3,7 +3,10 @@ matplotlib==3.7.2
 numpy==1.24.3
 scipy==1.11.1
 sqlalchemy==2.0.19
+alembic==1.11.1
 google-generativeai==0.3.0
 python-dotenv==1.0.0
 requests==2.31.0
-tkinter
+pandas==2.0.3
+pdfplumber==0.9.0
+pillow==10.0.0
