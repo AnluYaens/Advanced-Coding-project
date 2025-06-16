@@ -15,7 +15,8 @@ def load_bank_statement_pdf(file_path, insert_payment_func):
         dict: Summary of the import process: {"imported": int, "failed": int, "errors": list}
     """
     result = {"imported": 0, "failed": 0, "errors": []}
-
+    imported_expenses = []
+    
     try:
         with pdfplumber.open(file_path) as pdf:
             for page_num, page in enumerate(pdf.pages, 1):
@@ -55,7 +56,8 @@ def load_bank_statement_pdf(file_path, insert_payment_func):
                             category = row[col_index.get('category', '')] or "Other"
                             description = row[col_index.get('description', '')] or ""
 
-                            insert_payment_safe(amount, category, description, date_str)
+                            inserted = insert_payment_safe(amount, category, description, date_str)
+                            imported_expenses.append(inserted)
                             result["imported"] += 1
                         except Exception as e:
                             result["failed"] += 1
@@ -87,9 +89,9 @@ def load_bank_statement_pdf(file_path, insert_payment_func):
                             else:
                                 category = "Other"
 
-                            insert_payment_safe(amount, category, description, date_str)
+                            inserted = insert_payment_safe(amount, category, description, date_str)
+                            imported_expenses.append(inserted)
                             result["imported"] += 1
-                            print(f"[PLAIN PDF] {date_str} - ${amount:.2f} - {category}")
                         except Exception as e:
                             result["failed"] += 1
                             result["errors"].append(f"Line {line_num}: {e}")
@@ -101,4 +103,5 @@ def load_bank_statement_pdf(file_path, insert_payment_func):
         result["errors"].append(error)
         print(f"[IMPORT PDF ERROR] {error}")
 
+    result["expenses"] = imported_expenses
     return result

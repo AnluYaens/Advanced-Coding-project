@@ -140,8 +140,9 @@ class BudgetApp(ctk.CTk):
 
         contact_btn = ctk.CTkButton(
             bar, 
-            text="Contact",
+            text="📧 Contact",
             width=80,
+            font=("Arial", 16, "bold"),
             fg_color=self.card_bg,
             hover_color=self.hover,
             text_color=self.text,
@@ -151,8 +152,9 @@ class BudgetApp(ctk.CTk):
 
         ai_btn = ctk.CTkButton(
             bar,
-            text="AI Assistant",
+            text="🤖 AI Assistant",
             width=110,
+            font=("Arial", 16, "bold"),
             fg_color=self.card_bg,
             hover_color=self.hover,
             text_color=self.text,
@@ -170,7 +172,7 @@ class BudgetApp(ctk.CTk):
 
         ctk.CTkLabel(
             header, 
-            text="Budget Assistant", 
+            text="📊 Budget Assistant", 
             font=("Arial",32,"bold"), 
             text_color=self.text
         ).pack(pady=(20,10))
@@ -189,7 +191,7 @@ class BudgetApp(ctk.CTk):
                 fg_color=self.card_bg,
                 hover_color=self.hover,
                 text_color=self.text, 
-                font=("Arial",16), 
+                font=("Arial",16, "bold"), 
                 corner_radius=12
             ).grid(row=0, column=i, padx=20)
 
@@ -804,7 +806,7 @@ class AddExpenseDialog(ctk.CTkToplevel):
                 return
             # Allow input with commas and decimal points
             # E.g.: "1,234.56" -> 1234.56
-            cleaned = raw.replace(',', '')
+            cleaned = raw.replace(',', '.')
 
             try:
                 amount = float(cleaned)
@@ -920,7 +922,7 @@ class ChatWindow(ctk.CTkToplevel):
         # --- Import button ---
         import_btn = ctk.CTkButton(
             entry_row,
-            text="📎",
+            text="📂",
             width=40,
             height=40,
             corner_radius=20,
@@ -928,7 +930,7 @@ class ChatWindow(ctk.CTkToplevel):
             hover_color=parent.hover,
             text_color="white",
             command=self._import_bank_statement,
-            font=("Arial", 16)
+            font=("Arial", 16, "bold")
         )
         import_btn.pack(side="left", padx=(0, 10))
 
@@ -952,6 +954,7 @@ class ChatWindow(ctk.CTkToplevel):
             width=70,
             height=40,
             corner_radius=20,
+            font=("Arial", 16, "bold"),
             fg_color=parent.accent,  
             hover_color=parent.hover, 
             text_color="white", 
@@ -1013,6 +1016,15 @@ class ChatWindow(ctk.CTkToplevel):
                             f"Imported: {result['imported']} expenses\n"
                             f"Failed: {result.get('failed', 0)}"
                         )
+                    
+                    if result.get("expenses"):
+                        lines = ["📄 Imported expenses:"]
+                        for e in result["expenses"]:
+                            date = e.date.strftime("%Y-%m-%d") if e.date else "Unknown"
+                            desc = f" | {e.description}" if e.description else ""
+                            lines.append(f" • ID {e.id} | ${e.amount:.2f} | {e.category} | {date}{desc}")
+                        self._append("assistant", "\n".join(lines))
+                        
                     else:
                         self._append("assistant", "❌ No valid expenses found in PDF")
                     
@@ -1133,7 +1145,7 @@ class BudgetDialog(ctk.CTkToplevel):
     def __init__(self, parent: BudgetApp):
         super().__init__(parent)
         self.title("Set Budget Limits")
-        self.geometry("360x400")
+        self.geometry("360x450")
         self.grab_set()
         self.resizable(False, False)
 
@@ -1188,7 +1200,7 @@ class BudgetDialog(ctk.CTkToplevel):
                 text_color=parent.text
             ).grid(row=i, column=0, sticky="e", padx=(0,10), pady=8)
 
-            var = tk.DoubleVar(value=current.get(key, default))
+            var = tk.StringVar(value=str(current.get(key, default)))
             self.category_vars[key] = var
 
             ctk.CTkEntry(
@@ -1238,9 +1250,15 @@ class BudgetDialog(ctk.CTkToplevel):
 
             # --- Validate total budget ---
             try:
-                total = float(self.total_var.get().strip() or "0")
+                raw_total = self.total_var.get().strip().replace(",", ".")
+                if raw_total== "":
+                    total = 0.0
+                else:
+                    total = float(raw_total)
+                
                 if total < 0:
                     raise ValueError("Cannot be negative")
+                
                 data["total"] = total
             except ValueError as e:
                 messagebox.showerror(
@@ -1253,9 +1271,15 @@ class BudgetDialog(ctk.CTkToplevel):
             # --- Validate categories ---
             for key, var in self.category_vars.items():
                 try:
-                    value = float(var.get().strip() or "0")
+                    raw_val= var.get().strip().replace(",", ".")
+                    if raw_val == "":
+                        value = 0.0
+                    else:
+                        value = float(raw_val)
+                    
                     if value < 0:
                         raise ValueError(f"{key} cannot be negative")
+                    
                     data[key] = value
                 except ValueError:
                     messagebox.showerror(

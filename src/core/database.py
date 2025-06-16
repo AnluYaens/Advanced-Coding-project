@@ -375,8 +375,17 @@ def insert_payment_safe(amount: float, category: str, description: str, date_str
         else:
             date_obj = date_str
             
-        # Call original function with validated date
-        insert_payment(amount, category, description, date_obj.strftime("%Y-%m-%d"))
+        with get_db_session() as session:
+            exp = Expense(
+                amount=amount,
+                category=category.capitalize(),
+                description=description.strip(),
+                date=date_obj,
+            )
+            session.add(exp)
+            session.flush()  # Forces ID creation
+            session.expunge(exp)  # Detach from session before return
+            return exp
         
     except Exception as e:
         logger.error(f"Error in insert_payment_safe: {e}")

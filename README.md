@@ -7,7 +7,7 @@ An advanced budget tracking application with integrated AI assistant, interactiv
 📊 Interactive Visualizations – Line and donut charts for expense analysis
 💱 Currency Converter – Real-time exchange rates
 📄 Automatic Import – Reads CSV and PDF bank statements
-💾 Local Database – SQLite with SQLAlchemy ORM
+📀 Local Database – SQLite with SQLAlchemy ORM
 🎨 Modern Interface – Dark-themed design with CustomTkinter
 
 📋 Prerequisites
@@ -47,32 +47,35 @@ source venv311/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Configure environment variables
+4. Configure Environment Variables
+
+Create a `.env` file (you can copy from `.env.example`) and fill in the required values:
+
+```env
+# Google Gemini API Key
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Optional: Exchange Rate API (https://app.exchangerate-api.com/)
+EXCHANGE_API_KEY=your_exchange_api_key_here
+
+# App Configuration
+DEBUG=False
+LOG_LEVEL=INFO
+
+# Database connection (default is SQLite, leave commented)
+# DATABASE_URL=sqlite:///./budget_tracker.db
+# DATABASE_URL=postgresql://user:password@localhost/budget_db
+```
+
+You can register for a free API key:
+
+* Google Gemini: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+* Exchange rate API: [https://app.exchangerate-api.com/sign-up](https://app.exchangerate-api.com/sign-up)
+
+5. Run the application
 
 ```bash
-# Copy the example file
-cp .env.example .env
-
-# Edit .env and add your API key
-# Windows: notepad .env
-# macOS/Linux: nano .env
-```
-
-5. Obtain Google Gemini API Key
-
-* Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
-* Sign in or create an account
-* Generate a new API key
-* Copy the key and paste it into your `.env` file:
-
-```
-GOOGLE_API_KEY=your_api_key_here
-```
-
-6. Run the application
-
-```bash
-python main.py
+python -m src.main
 ```
 
 🎮 Usage
@@ -124,22 +127,28 @@ Date,Category,Description,Amount
 
 ```
 Advanced Coding project/
-├── src/
-│   ├── core/
-│   │   ├── database.py            # Database handling
-│   │   ├── models.py              # SQLAlchemy models
-│   │   └── ai_engine.py           # Gemini AI integration
-│   ├── services/
-│   │   ├── bank_statement_loader.py     # CSV importer
-│   │   ├── bank_statement_loader_pdf.py # PDF importer
-│   │   └── currency_api.py              # Exchange rate API
-│   └── ui/
-│       └── interface_ctk.py       # GUI interface
-├── alembic/                       # DB migrations
-├── main.py                        # Entry point
-├── requirements.txt               # Dependencies
-├── README.md                      # This file
-└── .env                           # Configuration (created from example)
+🔼️ src/
+   🔼️ __init__.py
+   🔼️ main.py # Entry point
+   🔼️ core/
+       🔼️ __init__.py
+       🔼️ database.py # Database handling
+       🔼️ models.py # SQLAlchemy models
+       🔼️ ai_engine.py # Gemini AI integration
+   🔼️ services/
+       🔼️ __init__.py
+       🔼️ bank_statement_loader.py # CSV importer
+       🔼️ bank_statement_loader_pdf.py # PDF importer
+       🔼️ currency_api.py # Exchange rate API
+   🔼️ ui/
+       🔼️ __init__.py
+       🔼️ interface_ctk.py # GUI interface
+🔼️ requirements.txt # Dependencies
+🔼️ README.md # This file
+🔼️ .env # Configuration (created from example)
+🔼️ .gitignore # Ignored files
+🔼️ budget_tracker.db # SQLite database
+🔼️ budget_tracker.db-wal / .db-shm # SQLite WAL files
 ```
 
 🔒 Security

@@ -46,5 +46,7 @@ pip-wheel-metadata/
 .DS_Store   # macOS
 Thumbs.db   # Windows
 
-
+# —— Alembic ——————————————————————————
+alembic/
+alembic.ini
 

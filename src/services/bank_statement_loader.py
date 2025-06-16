@@ -9,7 +9,8 @@ def load_bank_statement_csv(file_path, insert_payment_func):
     """
     
     result = {"imported": 0, "failed": 0, "errors": []}
-    
+    imported_expenses = []
+
     try:
         # Read CSV with error handling
         try:
@@ -83,22 +84,19 @@ def load_bank_statement_csv(file_path, insert_payment_func):
 
                 # Use safe version that handles multiple date formats
                 from src.core.database import insert_payment_safe
-                insert_payment_safe(amount, category, description,date_str)
+                inserted = insert_payment_safe(amount, category, description,date_str)
+                imported_expenses.append(inserted)
 
                 result["imported"] += 1
 
             except Exception as e:
                 result["failed"] += 1
-                error_msg = f"Row {idx+1}: {str(e)}"
-                result["errors"].append(error_msg)
-                print(f"[IMPORT ERROR] {error_msg}")
-        
-        # Summary
-        print(f"[IMPORT] Complete: {result['imported']} imported, {result['failed']} failed")
+                result["errors"].append(f"Row {idx+1}: {str(e)}")
+
+        result["expenses"] = imported_expenses
+        return result
 
     except Exception as e:
-        error_msg = f"Failed to read CSV file: {str(e)}"
-        result["errors"].append(error_msg)
-        print(f"[IMPORT ERROR] {error_msg}")
-    
-    return result
+        result["errors"].append(f"Failed to read CSV file: {str(e)}")
+        
+        return result
