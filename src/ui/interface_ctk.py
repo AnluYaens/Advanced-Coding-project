@@ -48,16 +48,24 @@ Modern tabbed interface with sidebar navigation:
     
 # ──────────────────────── THEME HANDLING ────────────────────────
 PALETTE = {
-    "bg": "#1a1625",           # darker main background 
-    "sidebar": "#2d235f",      # sidebar background
-    "card": "#322952",         # card/frame background (lighter than sidebar)
-    "accent": "#6d28d9",       # highlight color (buttons, lines)
-    "hover": "#7c3aed",        # hover color
-    "text": "#f9fafb",         # main text (almost white)
-    "text_secondary": "#a0a0a0", # secondary text
-    "error": "#ef4444",        # error color
-    "success": "#10b981",      # success color
-    "warning": "#f59e0b",      # warning color
+    "bg":          "#1a1625",   
+    "sidebar":     "#2d235f",   
+    "card":        "#322952",   
+    "accent":      "#6d28d9",   
+    "hover":       "#7c3aed",   
+    "text":        "#f9fafb",   
+    "text_secondary": "#a0a0a0",
+    "error":   "#ef4444",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "blue":   "#3b82f6",
+    "purple": "#8b5cf6",
+    "green":  "#10b981",
+    "orange": "#f59e0b",
+    "pink":   "#ec4899",
+    "teal":   "#06b6d4",
+    "red":    "#ef4444",
+    "yellow": "#eab308",
 }
 
 # ──────────────────────── inancial Insights Widget ────────────────────────
@@ -84,7 +92,7 @@ class FinancialInsightsWidget(ctk.CTkFrame):
             text="🔄",
             width=30,
             height=25,
-            fg_color=PALETTE["accent"],
+            fg_color=PALETTE["blue"],
             hover_color=PALETTE["hover"],
             command=self.refresh_insights,
             font=("Arial", 12)
@@ -158,21 +166,21 @@ class QuickStatsWidget(ctk.CTkFrame):
     # ──────── Create stats cards ────────
     def create_stats_cards(self, parent):
         """Create the 4 stat cards"""
-        stats_data = self.calculate_stats()
+        stats = self.calculate_stats()
 
         cards_info = [
-            ("💰", "Total Spent", f"${stats_data['total_spent']:.0f}", f"+{stats_data['spent_change']}%"),
-            ("📊", "Daily Avg", f"${stats_data['daily_avg']:.0f}", f"{stats_data['avg_change']:+.0f}%"),
-            ("🎯", "Budget Used", f"{stats_data['budget_used']}%", stats_data['budget_status']),
-            ("💳", "Transactions", str(stats_data['transaction_count']), f"+{stats_data['trans_change']}")
-        ]
+        ("💰", "Total\nSpent", f"${stats['total_spent']:.0f}",  f"↗ +{stats['spent_change']}%", PALETTE["blue"]),
+        ("📊", "Daily\nAverage", f"${stats['daily_avg']:.0f}", f"↘ {stats['avg_change']:+.0f}%", PALETTE["green"]),
+        ("🎯", "Budget\nUsed",  f"{stats['budget_used']}%", "→ On Track", PALETTE["purple"]),
+        ("💳", "Transactions",  str(stats['transaction_count']), f"↗ +{stats['trans_change']}",PALETTE["orange"]),
+    ]
 
-        for i, (icon, label, value, change) in enumerate(cards_info):
-            card = self.create_single_stat_card(parent, icon, label, value, change)
+        for i, (icon, label, value, change, colour) in enumerate(cards_info):
+            card = self.create_single_stat_card(parent, icon, label, value, change, colour)
             card.grid(row=i//2, column=i%2, padx=5, pady=5, sticky="ew")
 
     # ──────── Create single stat card ────────
-    def create_single_stat_card(self, parent, icon, label, value, change):
+    def create_single_stat_card(self, parent, icon, label, value, change, colour):
         """Create individual stat card"""
         card = ctk.CTkFrame(parent, fg_color=PALETTE["card"], corner_radius=8)
 
@@ -206,7 +214,7 @@ class QuickStatsWidget(ctk.CTkFrame):
             card,
             text=change,
             font=("Arial", 10),
-            text_color=PALETTE["accent"]
+            text_color=colour
         ).pack(padx=12, pady=(0, 12))
         
         return card
@@ -337,20 +345,20 @@ class BudgetApp(ctk.CTk):
         ]
         
         self.nav_buttons = {}
-        for icon, tab_name in self.tabs_config:
+        for icon, tab in self.tabs_config:
             btn = ctk.CTkButton(
                 sidebar,
-                text=f"{icon}  {tab_name}",
+                text=f"{icon}  {tab}",
                 anchor="w",
                 height=45,
                 fg_color="transparent",
                 text_color=self.colors["text"],
                 hover_color=self.colors["hover"],
                 font=("Arial", 14),
-                command=lambda t=tab_name: self.show_tab(t)
+                command=lambda t=tab: self.show_tab(t)
             )
             btn.pack(fill="x", padx=20, pady=2)
-            self.nav_buttons[tab_name] = btn
+            self.nav_buttons[tab] = btn
 
     # ──────── Create content area ────────
     def _create_content_area(self, parent):
@@ -1197,15 +1205,15 @@ class BudgetApp(ctk.CTk):
             if len(set(data)) > 1 and sum(data) > 0:
                 x_smooth = np.linspace(x.min(), x.max(), 300)
                 y_smooth = PchipInterpolator(x, data)(x_smooth)
-                ax.plot(x_smooth, y_smooth, color=self.colors["accent"], linewidth=3, zorder=1)
+                ax.plot(x_smooth, y_smooth, color=self.colors["blue"], linewidth=3, zorder=1)
             else:
-                ax.plot(x, data, color=self.colors["accent"], linewidth=3, marker="o", 
-                       markersize=8, markerfacecolor=self.colors["accent"], 
+                ax.plot(x, data, color=self.colors["blue"], linewidth=3, marker="o", 
+                       markersize=8, markerfacecolor=self.colors["blue"], 
                        markeredgewidth=2, markeredgecolor='white', zorder=1)
 
             for xi, val in zip(x, data):
                 if val > 0:
-                    ax.scatter(xi, val, color=self.colors["accent"], edgecolors='white', 
+                    ax.scatter(xi, val, color=self.colors["blue"], edgecolors='white', 
                              s=80, linewidth=2, zorder=3)
                     ax.text(xi, val + y_top * 0.03, f"${val:,.0f}", fontsize=10, 
                            color=self.colors["text"], ha='center', va='bottom', fontweight='bold')
@@ -1250,7 +1258,11 @@ class BudgetApp(ctk.CTk):
                            text_color=self.colors["text_secondary"], font=("Arial", 12)).pack(pady=(5, 0))
                 return
 
-            colors = ["#7c3aed", "#8b5cf6", "#a78bfa", "#ddd6fe"][:len(vals)]
+            colors = [
+                self.colors["green"],
+                self.colors["blue"],
+                self.colors["purple"],
+                self.colors["orange"]][:len(vals)]
 
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(5.5, 4), dpi=100, 
                                          gridspec_kw={'height_ratios': [3, 1.2]})
