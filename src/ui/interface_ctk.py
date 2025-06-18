@@ -4,7 +4,6 @@ import os
 import traceback
 import gc
 
-
 import customtkinter as ctk
 import matplotlib
 matplotlib.use('TkAgg')  # Set backend before importing pyplot
@@ -29,10 +28,10 @@ from src.core.models import Expense
 from src.core.ai_engine import chat_completion
 from src.services.currency_api import get_exchange_rate
 
-# Import bank statement loaders
+# --- Import bank statement loaders ---
 from src.services.bank_statement_loader import load_bank_statement_csv
 
-# PDF support toggle 
+# --- PDF support toggle ---
 PDF_SUPPORT = False
 try:
     from src.services.bank_statement_loader_pdf import load_bank_statement_pdf
@@ -41,206 +40,185 @@ except ImportError:
     print("Warning: bank_statement_loader_pdf not available")
 
 """
-File structure:
-- BudgetApp class: Main GUI and application logic.
-- AddExpenseDialog class: Manual expense input dialog.
-- ChatWindow class: AI assistant interaction.
-- Helper methods: Data visualization, currency conversion, and data management.
+Modern tabbed interface with sidebar navigation:
+- Left sidebar: Tab navigation buttons
+- Right main area: Tabbed content (Dashboard, Add Expense, Analytics, etc.)
+- Clean, unified experience with no popup windows
 """
     
-# ───────────────────────────────── THEME HANDLING ─────────────────────────
-# Define ALL hex colors in a single dictionary
+# ──────────────────────── THEME HANDLING ────────────────────────
 PALETTE = {
-    "bg": "#1e1b2e",      # general background (dark violet)
-    "card": "#2d235f",    # card/frame background
-    "accent": "#6d28d9",  # highlight color (buttons, lines)
-    "hover": "#7c3aed",   # hover color
-    "text": "#f9fafb",    # main text (almost white)
-    "error": "#ef4444",   # error color
-    "success": "#10b981", # success color
-    "warning": "#f59e0b", # warning color
+    "bg": "#1a1625",           # darker main background 
+    "sidebar": "#2d235f",      # sidebar background
+    "card": "#322952",         # card/frame background (lighter than sidebar)
+    "accent": "#6d28d9",       # highlight color (buttons, lines)
+    "hover": "#7c3aed",        # hover color
+    "text": "#f9fafb",         # main text (almost white)
+    "text_secondary": "#a0a0a0", # secondary text
+    "error": "#ef4444",        # error color
+    "success": "#10b981",      # success color
+    "warning": "#f59e0b",      # warning color
 }
 
-# ───────────────────────────────── Financial Insights class ─────────────────────────
-class FinancialInsightsSection(ctk.CTkFrame):
-    """Compact AI insights section to add above charts"""
+# ──────────────────────── inancial Insights Widget ────────────────────────
+class FinancialInsightsWidget(ctk.CTkFrame):
+    """AI insights widget for dashboard"""
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.configure(fg_color="#2d235f", corner_radius=12)
+        self.configure(fg_color=PALETTE["card"], corner_radius=12)
     
-        # --- Header row ---
+        # --- Header ---
         header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=20, pady=(15, 10))
+        header_frame.pack(fill="x", padx=15, pady=(15, 10))
 
         ctk.CTkLabel(
             header_frame,
             text="🤖 AI Financial Insights",
-            font=("Arial", 18, "bold"),
-            text_color="#f9fafb"
+            font=("Arial", 16, "bold"),
+            text_color=PALETTE["text"]
         ).pack(side="left")
 
         self.refresh_btn = ctk.CTkButton(
-                header_frame,
-                text="🔄 Refresh",
-                width=80,
-                height=28,
-                fg_color="#6d28d9",
-                hover_color="#7c3aed",
-                command=self.refresh_insights
-            )
+            header_frame,
+            text="🔄",
+            width=30,
+            height=25,
+            fg_color=PALETTE["accent"],
+            hover_color=PALETTE["hover"],
+            command=self.refresh_insights,
+            font=("Arial", 12)
+        )
         self.refresh_btn.pack(side="right")
 
-        # --- Insights container ---
-        self.insights_frame = ctk.CTkFrame(self, fg_color="#1e1b2e", corner_radius=8)
-        self.insights_frame.pack(fill="x", padx=20, pady=(0,15))
+        # --- Insights container ----
+        self.insights_frame = ctk.CTkFrame(self, fg_color=PALETTE["bg"], corner_radius=8)
+        self.insights_frame.pack(fill="both", expand=True, padx=15, pady=(0,15))
 
-        # --- Loading message ---
-        self.loading_label = ctk.CTkLabel(
-            self.insights_frame,
-            text="Loading insights...",
-            font=("Arial", 14),
-            text_color="#a0a0a0"
-        )
-        self.loading_label.pack(pady=20)
-
-        # Auto-load insights
+        # --- Auto-load insights ---
         self.after(100, self.refresh_insights)
 
-    # --- Refresh insights method ---
+    # ──────── Refresh insights ────────
     def refresh_insights(self):
-        """Generative the generated insights"""
+        """Generate insights"""
         for widget in self.insights_frame.winfo_children():
             widget.destroy()
         
-        loading = ctk.CTkLabel(
-            self.insights_frame,
-            text="🔄 Analyzing your financial data...",
-            font=("Arial", 14),
-            text_color="#a0a0a0"
-        )
-        loading.pack(pady=20)
-
-        # Simulate AI call (you will connect with real geminis)
-        self.after(1000, self._display_insights)
-
-    # --- Display insights method ---
-    def _display_insights(self):
-        """Display the generated insights"""
-        for widget in self.insights_frame.winfo_children():
-            widget.destroy()
-
-        # Sample insights (reemplazar con respuestas reales de AI)
+        # --- Sample insights ---
         insights = [
-            ("💡", "Your grocery spending is down 15% - keep it up!", "#10b981"),
-            ("⚠️", "Entertainment budget 85% used with 10 days left", "#f59e0b"),
-            ("🎯", "On track to save $280 this month!", "#6d28d9")
+            ("💡", "Grocery spending down 15%", PALETTE["success"]),
+            ("⚠️", "Entertainment budget 85% used", PALETTE["warning"]),
+            ("🎯", "On track to save $280", PALETTE["accent"])
         ]
 
         for icon, text, color in insights:
             insight_row = ctk.CTkFrame(self.insights_frame, fg_color="transparent")
-            insight_row.pack(fill="x", padx=15, pady=8)
+            insight_row.pack(fill="x", padx=10, pady=5)
 
             ctk.CTkLabel(
                 insight_row,
                 text=icon,
-                font=("Arial", 16)
-            ).pack(side="left", padx=(0, 10))
+                font=("Arial", 14)
+            ).pack(side="left", padx=(0, 8))
 
             ctk.CTkLabel(
                 insight_row,
                 text=text,
-                font=("Arial", 14),
-                text_color="#f9fafb",
+                font=("Arial", 12),
+                text_color=PALETTE["text"],
                 anchor="w"
             ).pack(side="left", fill="x", expand=True)
 
-# ───────────────────────────────── Quick Stats Widget class ─────────────────────────
+# ──────────────────────── Quick Stats Widget ────────────────────────
 class QuickStatsWidget(ctk.CTkFrame):
-    """Quick statistics widget for tabbed section"""
+    """Quick statistics cards for dashboard"""
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.configure(fg_color="transparent")
 
+        # --- Title ---
+        ctk.CTkLabel(
+            self,
+            text="📊 Quick Statistics",
+            font=("Arial", 16, "bold"),
+            text_color=PALETTE["text"]
+        ).pack(anchor="w", padx=5, pady=(0, 10))
+
         # --- Stats grid ---
         stats_container = ctk.CTkFrame(self, fg_color="transparent")
-        stats_container.pack(fill="both", expand=True, padx=20, pady=20)
+        stats_container.pack(fill="both", expand=True)
 
         # --- Configure 2x2 grid ---
         stats_container.grid_columnconfigure((0, 1), weight=1)
         stats_container.grid_rowconfigure((0, 1), weight=1)
 
-        # --- Create stat cards ---
         self.create_stats_cards(stats_container)
 
-    # ---- Create stats cards method ----
+    # ──────── Create stats cards ────────
     def create_stats_cards(self, parent):
         """Create the 4 stat cards"""
         stats_data = self.calculate_stats()
 
         cards_info = [
-            ("💰 Total Spent", f"${stats_data['total_spent']:.0f}", 
-             f"+{stats_data['spent_change']}%", "#10b981" if stats_data['spent_change'] > 0 else "#ef4444"),
-            ("📊 Daily Average", f"${stats_data['daily_avg']:.0f}", 
-             f"{stats_data['avg_change']:+.0f}%", "#ef4444" if stats_data['avg_change'] < 0 else "#10b981"),
-            ("🎯 Budget Used", f"{stats_data['budget_used']}%", 
-             stats_data['budget_status'], "#6d28d9"),
-            ("💳 Transactions", str(stats_data['transaction_count']), 
-             f"+{stats_data['trans_change']}", "#f59e0b")
+            ("💰", "Total Spent", f"${stats_data['total_spent']:.0f}", f"+{stats_data['spent_change']}%"),
+            ("📊", "Daily Avg", f"${stats_data['daily_avg']:.0f}", f"{stats_data['avg_change']:+.0f}%"),
+            ("🎯", "Budget Used", f"{stats_data['budget_used']}%", stats_data['budget_status']),
+            ("💳", "Transactions", str(stats_data['transaction_count']), f"+{stats_data['trans_change']}")
         ]
 
-        for i, (label, value, change, color) in enumerate(cards_info):
-            card = self.create_single_stat_card(parent, label, value, change, color)
-            card.grid(row=i//2, column=i%2, padx=10, pady=10, sticky="ew")
+        for i, (icon, label, value, change) in enumerate(cards_info):
+            card = self.create_single_stat_card(parent, icon, label, value, change)
+            card.grid(row=i//2, column=i%2, padx=5, pady=5, sticky="ew")
 
-    # ---- Single stat card method ----
-    def create_single_stat_card(self, parent, label, value, change, color):
+    # ──────── Create single stat card ────────
+    def create_single_stat_card(self, parent, icon, label, value, change):
         """Create individual stat card"""
-        card = ctk.CTkFrame(parent, fg_color="#2d235f", corner_radius=12)
+        card = ctk.CTkFrame(parent, fg_color=PALETTE["card"], corner_radius=8)
 
-        # --- Inner container for padding ---
-        inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Label
+        # --- Icon and label ---
+        header = ctk.CTkFrame(card, fg_color="transparent")
+        header.pack(fill="x", padx=12, pady=(12, 0))
+        
         ctk.CTkLabel(
-            inner,
+            header,
+            text=icon,
+            font=("Arial", 16)
+        ).pack(side="left")
+        
+        ctk.CTkLabel(
+            header,
             text=label,
-            font=("Arial", 14),
-            text_color="#a0a0a0"
-        ).pack()
+            font=("Arial", 11),
+            text_color=PALETTE["text_secondary"]
+        ).pack(side="left", padx=(5, 0))
 
-        # Value
+        # --- Value ---
         ctk.CTkLabel(
-            inner,
+            card,
             text=value,
-            font=("Arial", 28, "bold"),
-            text_color="#f9fafb"
-        ).pack(pady=(5, 0))
+            font=("Arial", 20, "bold"),
+            text_color=PALETTE["text"]
+        ).pack(padx=12, pady=(5, 0))
 
-        # Change indicator
-        change_label = ctk.CTkLabel(
-            inner,
+        # --- Change ---
+        ctk.CTkLabel(
+            card,
             text=change,
-            font=("Arial", 12),
-            text_color=color
-        )
-        change_label.pack(pady=(5, 0))
+            font=("Arial", 10),
+            text_color=PALETTE["accent"]
+        ).pack(padx=12, pady=(0, 12))
         
         return card
     
-    # ---- Calculate Stats method ----
+    # ──────── Calculate stats ────────
     def calculate_stats(self):
         """Calculate statistics from database"""
-        
         try:
             with get_db_session() as session:
-                # Current month
                 now = datetime.now()
                 month_start = datetime(now.year, now.month, 1)
 
-                # Get current month expenses
                 current_expenses = session.query(Expense).filter(
                     Expense.date >= month_start
                 ).all()
@@ -248,115 +226,937 @@ class QuickStatsWidget(ctk.CTkFrame):
                 total_spent = sum(e.amount for e in current_expenses)
                 transaction_count = len(current_expenses)
                 
-                # --- Calculate daily average ---
                 days_passed = (now - month_start).days + 1
                 daily_avg = total_spent / days_passed if days_passed > 0 else 0
 
-                # --- Budget calculations (assuming $2000 monthly budget)
                 monthly_budget = 2000
                 budget_used = (total_spent / monthly_budget * 100) if monthly_budget > 0 else 0
                 budget_status = "On Track" if budget_used <= (days_passed / 30 * 100) else "Over Budget"
 
-                # --- Calculate changes (mock data for now)
-                spent_change = 12
-                avg_change = -5
-                trans_change = 8
-
                 return{
                     'total_spent': total_spent,
-                    'spent_change': spent_change,
+                    'spent_change': 12,
                     'daily_avg': daily_avg,
-                    'avg_change': avg_change,
+                    'avg_change': -5,
                     'budget_used': int(budget_used),
                     'budget_status': budget_status,
                     'transaction_count': transaction_count,
-                    'trans_change': trans_change
+                    'trans_change': 8
                 }
         except Exception as e:
             print(f"Error calculating stats: {e}")
-            # Return default values
             return {
-                'total_spent': 0,
-                'spent_change': 0,
-                'daily_avg': 0,
-                'avg_change': 0,
-                'budget_used': 0,
-                'budget_status': "No Data",
-                'transaction_count': 0,
-                'trans_change': 0
+                'total_spent': 0, 'spent_change': 0, 'daily_avg': 0, 'avg_change': 0,
+                'budget_used': 0, 'budget_status': "No Data", 'transaction_count': 0, 'trans_change': 0
             }
-        
 
-# ───────────────────────────────── Global customTkinter config ─────────────────────────
+# ──────────────────────── Global customTkinter config ────────────────────────
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-# ───────────────────────────────── Application window class ─────────────────────────
+# ──────────────────────── Main Application ────────────────────────
 class BudgetApp(ctk.CTk):
-    """Main budget application window."""
+    """Modern tabbed budget application with sidebar navigation"""
 
     def __init__(self):
         super().__init__()
         self.title("AI Budget Tracker")
-        self.geometry("820x920")
-        self.resizable(False, False)
+        self.geometry("1200x800")
+        self.resizable(True, True)
+        self.minsize(1000, 700)
 
-        # ---- Palette accessible throughout the instance ----
+        # --- Colors ---
         self.colors = PALETTE.copy()
-        # Short aliases
-        self.bg       = self.colors["bg"]
-        self.card_bg  = self.colors["card"]
-        self.accent   = self.colors["accent"]
-        self.hover    = self.colors["hover"]
-        self.text     = self.colors["text"]
-
-        # Window background
-        self.configure(fg_color=self.bg)
+        self.configure(fg_color=self.colors["bg"])
         
-        # Save references to main sections
+        # --- State management ---
+        self.current_tab = "Dashboard"
         self.main_sections = {}
         
-        # Initialize variables that will be used in tabs
+        # --- Initialize variables ---
         self.amount_var = None
         self.from_var = None
         self.to_var = None
         self.result_lbl = None
         self.rate_lbl = None
-        self.tab_buttons = {}
-        self.tab_content = None
         
-        # Build UI
-        self._create_top_tabs()
-        self._create_header()
-        self._create_financial_insights()
-        self._create_charts_section()
-        self._create_tabbed_tools_section()
+        # --- Build UI ---
+        self._create_layout()
 
-     # ─────────────────────────── DATABASE HELPERS ────────────────────────────
+    # ──────── Create layout ────────
+    def _create_layout(self):
+        """Create the main layout with sidebar and tabbed content area"""
+        # --- Main container ---
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=0, pady=0)
+        
+        # --- Configure grid ---
+        main_container.grid_columnconfigure(1, weight=1)
+        main_container.grid_rowconfigure(0, weight=1)
+        
+        # --- Create sidebar ---
+        self._create_sidebar(main_container)
+        
+        # --- Create main content area ---
+        self._create_content_area(main_container)
+        
+        # --- Show dashboard by default ---
+        self.show_tab("Dashboard")
+
+    # ──────── Create sidebar ────────
+    def _create_sidebar(self, parent):
+        """Create left sidebar with tab navigation"""
+        sidebar = ctk.CTkFrame(parent, fg_color=self.colors["sidebar"], width=250, corner_radius=0)
+        sidebar.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        sidebar.grid_propagate(False)
+        
+        self.main_sections['sidebar'] = sidebar
+        
+        # --- Header ---
+        header = ctk.CTkFrame(sidebar, fg_color="transparent", height=80)
+        header.pack(fill="x", padx=20, pady=(20, 30))
+        header.pack_propagate(False)
+        
+        ctk.CTkLabel(
+            header,
+            text="💰 Budget\nTracker",
+            font=("Arial", 20, "bold"),
+            text_color=self.colors["text"],
+            justify="left"
+        ).pack(anchor="w")
+        
+        # --- Tab navigation buttons ---
+        self.tabs_config = [
+            ("🏠", "Dashboard"),
+            ("➕", "Add Expense"), 
+            ("📊", "Analytics"),
+            ("🎯", "Set Budget"),
+            ("💱", "Currency"),
+            ("🤖", "AI Assistant"),
+            ("📧", "Contact"),
+        ]
+        
+        self.nav_buttons = {}
+        for icon, tab_name in self.tabs_config:
+            btn = ctk.CTkButton(
+                sidebar,
+                text=f"{icon}  {tab_name}",
+                anchor="w",
+                height=45,
+                fg_color="transparent",
+                text_color=self.colors["text"],
+                hover_color=self.colors["hover"],
+                font=("Arial", 14),
+                command=lambda t=tab_name: self.show_tab(t)
+            )
+            btn.pack(fill="x", padx=20, pady=2)
+            self.nav_buttons[tab_name] = btn
+
+    # ──────── Create content area ────────
+    def _create_content_area(self, parent):
+        """Create main content area for tabs"""
+        self.content_frame = ctk.CTkScrollableFrame(
+            parent, 
+            fg_color=self.colors["bg"],
+            corner_radius=0
+        )
+        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=0, pady=0)
+        
+        self.main_sections['content'] = self.content_frame
+
+    # ──────── Set active tab ────────
+    def set_active_tab(self, tab_name):
+        """Update navigation button styles"""
+        for name, btn in self.nav_buttons.items():
+            if name == tab_name:
+                btn.configure(fg_color=self.colors["accent"])
+            else:
+                btn.configure(fg_color="transparent")
+
+    # ──────── Clear content ────────
+    def clear_content(self):
+        """Clear the main content area"""
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+
+    # ──────── Show tabs ────────
+    def show_tab(self, tab_name):
+        """Show the selected tab content"""
+        self.clear_content()
+        self.set_active_tab(tab_name)
+        self.current_tab = tab_name
+        
+        # --- Route to appropriate tab content ---
+        if tab_name == "Dashboard":
+            self._create_dashboard_tab()
+        elif tab_name == "Add Expense":
+            self._create_add_expense_tab()
+        elif tab_name == "Analytics":
+            self._create_analytics_tab()
+        elif tab_name == "Set Budget":
+            self._create_budget_tab()
+        elif tab_name == "Currency":
+            self._create_currency_tab()
+        elif tab_name == "AI Assistant":
+            self._create_ai_assistant_tab()
+        elif tab_name == "Contact":
+            self._create_contact_tab()
+
+    # ──────────────────────── TAB CONTENT METHODS ────────────────────────
+
+    # ──────── Create dashboard tab ────────
+    def _create_dashboard_tab(self):
+        """Create dashboard tab content"""
+        # --- Dashboard title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="📊 Financial Dashboard",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Top row: Quick stats and AI insights ---
+        top_row = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        top_row.pack(fill="x", padx=30, pady=10)
+        
+        # --- Configure grid for top row ---
+        top_row.grid_columnconfigure(0, weight=2)
+        top_row.grid_columnconfigure(1, weight=1)
+        
+        # --- Quick stats (2/3 width) ---
+        stats_widget = QuickStatsWidget(top_row, fg_color="transparent")
+        stats_widget.grid(row=0, column=0, sticky="ew", padx=(0, 15))
+        
+        # --- AI insights (1/3 width) ---
+        insights_widget = FinancialInsightsWidget(top_row)
+        insights_widget.grid(row=0, column=1, sticky="ew")
+        
+        # --- Charts section ---
+        self._create_charts_section()
+
+    # ──────── Create add expense tab ────────
+    def _create_add_expense_tab(self):
+        """Create add expense tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="➕ Add New Expense",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Main form card ---
+        form_card = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=self.colors["card"],
+            corner_radius=12
+        )
+        form_card.pack(fill="x", padx=30, pady=20)
+        
+        # --- Form content ---
+        form_content = ctk.CTkFrame(form_card, fg_color="transparent")
+        form_content.pack(padx=50, pady=50)
+        
+        # --- Amount ---
+        ctk.CTkLabel(
+            form_content,
+            text="Amount",
+            font=("Arial", 16, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 8))
+        
+        self.expense_amount_var = tk.StringVar(value="")
+        amount_entry = ctk.CTkEntry(
+            form_content,
+            textvariable=self.expense_amount_var,
+            width=400,
+            height=50,
+            placeholder_text="0.00",
+            font=("Arial", 18)
+        )
+        amount_entry.pack(anchor="w", pady=(0, 20))
+        amount_entry.focus()
+        
+        # --- Category ---
+        ctk.CTkLabel(
+            form_content,
+            text="Category",
+            font=("Arial", 16, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 8))
+        
+        self.expense_cat_var = tk.StringVar(value="Groceries")
+        category_menu = ctk.CTkOptionMenu(
+            form_content,
+            variable=self.expense_cat_var,
+            values=["Groceries", "Electronics", "Entertainment", "Other"],
+            width=400,
+            height=50,
+            fg_color=self.colors["accent"],
+            font=("Arial", 16)
+        )
+        category_menu.pack(anchor="w", pady=(0, 20))
+        
+        # --- Description ---
+        ctk.CTkLabel(
+            form_content,
+            text="Description (optional)",
+            font=("Arial", 16, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 8))
+        
+        self.expense_desc_var = tk.StringVar()
+        desc_entry = ctk.CTkEntry(
+            form_content,
+            textvariable=self.expense_desc_var,
+            width=400,
+            height=50,
+            placeholder_text="What did you buy?",
+            font=("Arial", 16)
+        )
+        desc_entry.pack(anchor="w", pady=(0, 30))
+        
+        # --- Buttons ---
+        btn_frame = ctk.CTkFrame(form_content, fg_color="transparent")
+        btn_frame.pack(anchor="w")
+        
+        save_btn = ctk.CTkButton(
+            btn_frame,
+            text="💾 Save Expense",
+            width=200,
+            height=50,
+            command=self._save_expense,
+            fg_color=self.colors["success"],
+            hover_color="#059669",
+            font=("Arial", 16, "bold")
+        )
+        save_btn.pack(side="left", padx=(0, 15))
+        
+        clear_btn = ctk.CTkButton(
+            btn_frame,
+            text="🗑️ Clear Form",
+            width=150,
+            height=50,
+            command=self._clear_expense_form,
+            fg_color="#666",
+            hover_color="#555",
+            font=("Arial", 16)
+        )
+        clear_btn.pack(side="left")
+
+    # ──────── Create analytics tab ────────
+    def _create_analytics_tab(self):
+        """Create analytics tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="📊 Spending Analytics",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Analytics content ---
+        try:
+            with get_db_session() as session:
+                exps = session.query(Expense).order_by(Expense.date.desc()).all()
+                session.expunge_all()
+
+            if not exps:
+                # --- No data message ---
+                no_data_card = ctk.CTkFrame(
+                    self.content_frame,
+                    fg_color=self.colors["card"],
+                    corner_radius=12
+                )
+                no_data_card.pack(fill="x", padx=30, pady=20)
+                
+                ctk.CTkLabel(
+                    no_data_card,
+                    text="📈 No expenses recorded yet",
+                    font=("Arial", 20, "bold"),
+                    text_color=self.colors["text_secondary"]
+                ).pack(pady=50)
+                
+                ctk.CTkLabel(
+                    no_data_card,
+                    text="Start by adding some expenses to see your analytics here!",
+                    font=("Arial", 14),
+                    text_color=self.colors["text_secondary"]
+                ).pack(pady=(0, 50))
+                return
+            
+            total = sum(e.amount for e in exps)
+            
+            # --- Summary card ---
+            summary_card = ctk.CTkFrame(
+                self.content_frame,
+                fg_color=self.colors["card"],
+                corner_radius=12
+            )
+            summary_card.pack(fill="x", padx=30, pady=20)
+            
+            summary_content = ctk.CTkFrame(summary_card, fg_color="transparent")
+            summary_content.pack(padx=40, pady=30)
+            
+            # --- Total expenses ---
+            ctk.CTkLabel(
+                summary_content,
+                text=f"💰 Total Expenses: ${total:.2f}",
+                font=("Arial", 24, "bold"),
+                text_color=self.colors["text"]
+            ).pack(anchor="w", pady=(0, 20))
+            
+            # --- By category analysis ---
+            ctk.CTkLabel(
+                summary_content,
+                text="📊 Spending by Category:",
+                font=("Arial", 18, "bold"),
+                text_color=self.colors["text"]
+            ).pack(anchor="w", pady=(0, 10))
+            
+            by_category = {}
+            for e in exps:
+                cat = e.category or "Other"
+                by_category[cat] = by_category.get(cat, 0) + e.amount
+            
+            for cat, amount in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
+                percentage = (amount / total * 100) if total > 0 else 0
+                
+                cat_frame = ctk.CTkFrame(summary_content, fg_color=self.colors["bg"], corner_radius=8)
+                cat_frame.pack(fill="x", pady=5)
+                
+                ctk.CTkLabel(
+                    cat_frame,
+                    text=f"• {cat}: ${amount:.2f} ({percentage:.1f}%)",
+                    font=("Arial", 14),
+                    text_color=self.colors["text"]
+                ).pack(anchor="w", padx=15, pady=10)
+            
+            # --- Recent expenses ---
+            ctk.CTkLabel(
+                summary_content,
+                text="🕐 Recent Expenses (last 10):",
+                font=("Arial", 18, "bold"),
+                text_color=self.colors["text"]
+            ).pack(anchor="w", pady=(30, 10))
+            
+            for e in exps[:10]:
+                date_str = e.date.strftime("%m/%d/%Y") if e.date else "Unknown"
+                desc = f" - {e.description}" if e.description else ""
+                
+                exp_frame = ctk.CTkFrame(summary_content, fg_color=self.colors["bg"], corner_radius=8)
+                exp_frame.pack(fill="x", pady=2)
+                
+                ctk.CTkLabel(
+                    exp_frame,
+                    text=f"{date_str} | {e.category}: ${e.amount:.2f}{desc}",
+                    font=("Arial", 12),
+                    text_color=self.colors["text_secondary"]
+                ).pack(anchor="w", padx=15, pady=8)
+
+        except Exception as e:
+            error_card = ctk.CTkFrame(
+                self.content_frame,
+                fg_color=self.colors["card"],
+                corner_radius=12
+            )
+            error_card.pack(fill="x", padx=30, pady=20)
+            
+            ctk.CTkLabel(
+                error_card,
+                text=f"❌ Error loading analytics: {str(e)}",
+                font=("Arial", 16),
+                text_color=self.colors["error"]
+            ).pack(pady=50)
+
+    # ──────── Create budget tab ────────
+    def _create_budget_tab(self):
+        """Create budget management tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="🎯 Budget Management",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Budget form card ---
+        budget_card = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=self.colors["card"],
+            corner_radius=12
+        )
+        budget_card.pack(fill="x", padx=30, pady=20)
+        
+        budget_content = ctk.CTkFrame(budget_card, fg_color="transparent")
+        budget_content.pack(padx=50, pady=40)
+        
+        # --- Get current budgets ---
+        current = get_budget() or {}
+        
+        # --- Total budget ---
+        ctk.CTkLabel(
+            budget_content,
+            text="💰 Total Monthly Budget:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 10))
+        
+        self.total_budget_var = tk.StringVar(value=str(current.get("total", 2000.0)))
+        total_entry = ctk.CTkEntry(
+            budget_content,
+            textvariable=self.total_budget_var,
+            width=300,
+            height=40,
+            font=("Arial", 16)
+        )
+        total_entry.pack(anchor="w", pady=(0, 30))
+        
+        # --- Category budgets ---
+        ctk.CTkLabel(
+            budget_content,
+            text="📊 Category Budgets:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 15))
+        
+        self.category_budget_vars = {}
+        categories = [
+            ("Groceries", "groceries", 600.0),
+            ("Entertainment", "entertainment", 300.0),
+            ("Electronics", "electronics", 500.0),
+            ("Other", "other", 200.0)
+        ]
+        
+        for display_name, key, default in categories:
+            cat_frame = ctk.CTkFrame(budget_content, fg_color="transparent")
+            cat_frame.pack(fill="x", pady=8)
+            
+            ctk.CTkLabel(
+                cat_frame,
+                text=f"{display_name}:",
+                font=("Arial", 14),
+                text_color=self.colors["text"],
+                width=150
+            ).pack(side="left")
+            
+            var = tk.StringVar(value=str(current.get(key, default)))
+            self.category_budget_vars[key] = var
+            
+            ctk.CTkEntry(
+                cat_frame,
+                textvariable=var,
+                width=200,
+                height=35,
+                font=("Arial", 14)
+            ).pack(side="left", padx=(20, 0))
+        
+        # --- Info ---
+        ctk.CTkLabel(
+            budget_content,
+            text="💡 Tip: Set 0 to disable budget limit for a category",
+            font=("Arial", 12),
+            text_color=self.colors["text_secondary"]
+        ).pack(anchor="w", pady=(20, 30))
+        
+        # --- Save button ---
+        save_budget_btn = ctk.CTkButton(
+            budget_content,
+            text="💾 Save Budget Settings",
+            width=250,
+            height=50,
+            command=self._save_budget_settings,
+            fg_color=self.colors["success"],
+            hover_color="#059669",
+            font=("Arial", 16, "bold")
+        )
+        save_budget_btn.pack(anchor="w")
+
+    # ──────── Create currency tab ────────
+    def _create_currency_tab(self):
+        """Create currency converter tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="💱 Currency Converter",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Converter card ---
+        converter_card = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=self.colors["card"],
+            corner_radius=12
+        )
+        converter_card.pack(fill="x", padx=30, pady=20)
+        
+        # --- Converter content ---
+        content = ctk.CTkFrame(converter_card, fg_color="transparent")
+        content.pack(padx=50, pady=50)
+        
+        # --- Amount input ---
+        ctk.CTkLabel(
+            content,
+            text="💰 Amount to convert:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 10))
+        
+        self.amount_var = tk.StringVar(value="1.0")
+        amount_entry = ctk.CTkEntry(
+            content,
+            textvariable=self.amount_var,
+            width=400,
+            height=50,
+            font=("Arial", 18)
+        )
+        amount_entry.pack(anchor="w", pady=(0, 30))
+        amount_entry.bind("<KeyRelease>", lambda *_: self._update_conversion())
+        
+        # --- Currency selection ---
+        ctk.CTkLabel(
+            content,
+            text="🌍 Select currencies:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 15))
+        
+        currency_frame = ctk.CTkFrame(content, fg_color="transparent")
+        currency_frame.pack(anchor="w", pady=(0, 30))
+        
+        currs = ["USD", "EUR", "GBP", "MXN", "JPY", "CAD"]
+        self.from_var = tk.StringVar(value="USD")
+        self.to_var = tk.StringVar(value="EUR")
+        
+        # --- From currency ---
+        from_frame = ctk.CTkFrame(currency_frame, fg_color="transparent")
+        from_frame.pack(side="left", padx=(0, 30))
+        
+        ctk.CTkLabel(from_frame, text="From:", font=("Arial", 14), text_color=self.colors["text"]).pack()
+        ctk.CTkOptionMenu(
+            from_frame,
+            variable=self.from_var,
+            values=currs,
+            width=150,
+            height=40,
+            fg_color=self.colors["accent"],
+            font=("Arial", 16),
+            command=lambda *_: self._update_conversion()
+        ).pack(pady=(5, 0))
+        
+        # --- To currency ---
+        to_frame = ctk.CTkFrame(currency_frame, fg_color="transparent")
+        to_frame.pack(side="left")
+        
+        ctk.CTkLabel(to_frame, text="To:", font=("Arial", 14), text_color=self.colors["text"]).pack()
+        ctk.CTkOptionMenu(
+            to_frame,
+            variable=self.to_var,
+            values=currs,
+            width=150,
+            height=40,
+            fg_color=self.colors["accent"],
+            font=("Arial", 16),
+            command=lambda *_: self._update_conversion()
+        ).pack(pady=(5, 0))
+        
+        # --- Results ---
+        results_frame = ctk.CTkFrame(content, fg_color=self.colors["bg"], corner_radius=12)
+        results_frame.pack(fill="x", pady=20)
+        
+        self.result_lbl = ctk.CTkLabel(
+            results_frame,
+            text="",
+            font=("Arial", 24, "bold"),
+            text_color=self.colors["text"]
+        )
+        self.result_lbl.pack(pady=(20, 10))
+        
+        self.rate_lbl = ctk.CTkLabel(
+            results_frame,
+            text="",
+            font=("Arial", 14),
+            text_color=self.colors["text_secondary"]
+        )
+        self.rate_lbl.pack(pady=(0, 20))
+        
+        # --- Initial conversion ---
+        self._update_conversion()
+
+    # ──────── Create AI assistant tab ────────
+    def _create_ai_assistant_tab(self):
+        """Create AI assistant tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="🤖 AI Budget Assistant",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Chat card ---
+        chat_card = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=self.colors["card"],
+            corner_radius=12
+        )
+        chat_card.pack(fill="both", expand=True, padx=30, pady=20)
+        
+        # --- Chat display ---
+        self.chatbox = tk.Text(
+            chat_card,
+            height=25,
+            state="disabled",
+            bg=self.colors["card"],
+            fg=self.colors["text"],
+            font=("Arial", 12),
+            wrap="word",
+            borderwidth=0,
+            highlightthickness=0
+        )
+        self.chatbox.pack(padx=20, pady=(20, 10), fill="both", expand=True)
+        
+        # --- Configure text tags ---
+        self.chatbox.tag_config("user_header", foreground="#a78bfa", font=("Arial", 11, "bold"))
+        self.chatbox.tag_config("user", foreground="#c4b5fd")
+        self.chatbox.tag_config("assistant_header", foreground="#60a5fa", font=("Arial", 11, "bold"))
+        self.chatbox.tag_config("assistant", foreground=self.colors["text"])
+        
+        # --- Input area ---
+        input_frame = ctk.CTkFrame(chat_card, fg_color="transparent")
+        input_frame.pack(fill="x", padx=20, pady=(0, 20))
+        
+        # --- Import button ---
+        import_btn = ctk.CTkButton(
+            input_frame,
+            text="📂",
+            width=50,
+            height=40,
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["hover"],
+            command=self._import_bank_statement,
+            font=("Arial", 16)
+        )
+        import_btn.pack(side="left", padx=(0, 10))
+        
+        # --- Message input ---
+        self.msg_var = tk.StringVar()
+        entry = ctk.CTkEntry(
+            input_frame,
+            textvariable=self.msg_var,
+            height=40,
+            placeholder_text="Type your message...",
+            font=("Arial", 12)
+        )
+        entry.pack(side="left", expand=True, fill="x", padx=(0, 10))
+        entry.bind("<Return>", lambda e: self._send_message())
+        entry.focus()
+        
+        # --- Send button ---
+        self.send_btn = ctk.CTkButton(
+            input_frame,
+            text="Send",
+            width=80,
+            height=40,
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["hover"],
+            command=self._send_message,
+            font=("Arial", 12, "bold")
+        )
+        self.send_btn.pack(side="right")
+        
+        # --- Initialize chat history and welcome message ---
+        self.chat_history = []
+        self._append_chat_message("assistant", 
+                                 "Hello! I'm your AI budget assistant. I can help you:\n"
+                                 "• Record expenses (e.g., 'Add $50 for groceries')\n"
+                                 "• Check spending (e.g., 'How much did I spend on entertainment?')\n"
+                                 "• Import bank statements (click 📂)\n\n"
+                                 "How can I help you today?")
+
+    # ──────── Create content tab ────────
+    def _create_contact_tab(self):
+        """Create contact information tab content"""
+        # --- Title ---
+        title_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        title_frame.pack(fill="x", padx=30, pady=(30, 20))
+        
+        ctk.CTkLabel(
+            title_frame,
+            text="📧 Contact & About",
+            font=("Arial", 28, "bold"),
+            text_color=self.colors["text"]
+        ).pack(side="left")
+        
+        # --- Contact card ---
+        contact_card = ctk.CTkFrame(
+            self.content_frame,
+            fg_color=self.colors["card"],
+            corner_radius=12
+        )
+        contact_card.pack(fill="x", padx=30, pady=20)
+        
+        contact_content = ctk.CTkFrame(contact_card, fg_color="transparent")
+        contact_content.pack(padx=50, pady=50)
+        
+        # --- App info ---
+        ctk.CTkLabel(
+            contact_content,
+            text="💰 AI Budget Tracker",
+            font=("Arial", 24, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 10))
+        
+        ctk.CTkLabel(
+            contact_content,
+            text="Modern budget management application with AI integration.",
+            font=("Arial", 16),
+            text_color=self.colors["text_secondary"]
+        ).pack(anchor="w", pady=(0, 30))
+        
+        # --- Features ---
+        ctk.CTkLabel(
+            contact_content,
+            text="🚀 Features:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(0, 10))
+        
+        features = [
+            "• Modern sidebar navigation interface",
+            "• Interactive financial dashboard",
+            "• AI-powered expense insights",
+            "• Real-time currency conversion",
+            "• Visual analytics and charts",
+            "• Bank statement import (CSV/PDF)",
+            "• Natural language AI assistant",
+            "• Budget tracking and management"
+        ]
+        
+        for feature in features:
+            ctk.CTkLabel(
+                contact_content,
+                text=feature,
+                font=("Arial", 14),
+                text_color=self.colors["text_secondary"]
+            ).pack(anchor="w", pady=2)
+        
+        # --- Contact info ---
+        ctk.CTkLabel(
+            contact_content,
+            text="👨‍💻 Developer:",
+            font=("Arial", 18, "bold"),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=(30, 10))
+        
+        ctk.CTkLabel(
+            contact_content,
+            text="Created by: Angel Jaen",
+            font=("Arial", 14),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=2)
+        
+        ctk.CTkLabel(
+            contact_content,
+            text="Email: anlujaen@gmail.com",
+            font=("Arial", 14),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=2)
+        
+        ctk.CTkLabel(
+            contact_content,
+            text="GitHub: github.com/yourusername/ai-budget-tracker",
+            font=("Arial", 14),
+            text_color=self.colors["text"]
+        ).pack(anchor="w", pady=2)
+
+    # ──────────────────────── DASHBOARD CHART METHODS ────────────────────────
+
+    # ──────── Create charts sections ────────
+    def _create_charts_section(self):
+        """Create charts section for dashboard"""
+        charts_frame = ctk.CTkFrame(
+            self.content_frame, 
+            fg_color=self.colors["card"], 
+            corner_radius=12
+        )
+        charts_frame.pack(fill="x", padx=30, pady=20)
+        
+        # --- Charts title ---
+        title_row = ctk.CTkFrame(charts_frame, fg_color="transparent")
+        title_row.pack(fill="x", padx=20, pady=(20, 10))
+
+        ctk.CTkLabel(
+            title_row, 
+            text="📈 Expense Charts", 
+            font=("Arial", 18, "bold"), 
+            text_color=self.colors["text"]
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            title_row, 
+            text="Category Breakdown", 
+            font=("Arial", 18, "bold"), 
+            text_color=self.colors["text"]
+        ).pack(side="right")
+        
+        # --- Charts row ---
+        charts_row = ctk.CTkFrame(charts_frame, fg_color="transparent")
+        charts_row.pack(fill="x", padx=20, pady=(0, 20))
+
+        left_chart = ctk.CTkFrame(charts_row, fg_color=self.colors["bg"], corner_radius=8)
+        left_chart.pack(side="left", expand=True, fill="both", padx=(0, 10))
+
+        right_chart = ctk.CTkFrame(charts_row, fg_color=self.colors["bg"], corner_radius=8)
+        right_chart.pack(side="right", expand=True, fill="both", padx=(10, 0))
+
+        # --- Draw charts ---
+        self.show_line_chart(left_chart)
+        self.show_donut_chart(right_chart)
+
+    # ──────── Get expenses by month ────────
     def get_expenses_by_month(self):
         """Get expense totals for each month of the current year"""
         try:
             with get_db_session() as session:
                 exps = session.query(Expense).all()
-                session.expunge_all()  # Detach from session
+                session.expunge_all()
 
             current_year = datetime.now().year
             months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
             totals = [0] * len(months)
             
             for e in exps:
-                if e.date:
-                    # Filter by current year without using extract
-                    if e.date.year == current_year:
-                        month_abbr = e.date.strftime('%b')
-                        if month_abbr in months:
-                            idx = months.index(month_abbr)
-                            totals[idx] += e.amount        
-            return totals  # <- NO slicing aquí
+                if e.date and e.date.year == current_year:
+                    month_abbr = e.date.strftime('%b')
+                    if month_abbr in months:
+                        idx = months.index(month_abbr)
+                        totals[idx] += e.amount        
+            return totals
         except Exception as e:
             print(f"Error getting expenses by month: {e}")
             return [0] * 6
 
+    # ──────── Get expenses by category ────────
     def get_expenses_by_category(self):
         """Get expense totals for each category"""
         try:
@@ -372,7 +1172,6 @@ class BudgetApp(ctk.CTk):
                 if cat in cats:
                     totals[cats.index(cat)] += e.amount
                 else:
-                    # Put uncategorized in "Other"
                     totals[cats.index("Other")] += e.amount
                     
             return totals
@@ -380,584 +1179,195 @@ class BudgetApp(ctk.CTk):
             print(f"Error getting expenses by category: {e}")
             return [0] * 4
 
-    # ---- Top bar ----
-    def _create_top_tabs(self):
-        """Create the top navigation bar with buttons"""
-        bar = ctk.CTkFrame(self, fg_color=self.card_bg, height=40)
-        bar.pack(fill="x")
-        
-        self.main_sections['top_bar'] = bar
-
-        contact_btn = ctk.CTkButton(
-            bar, 
-            text="📧 Contact",
-            width=80,
-            font=("Arial", 16, "bold"),
-            fg_color=self.card_bg,
-            hover_color=self.hover,
-            text_color=self.text,
-            command=self.show_contact,
-        )
-        contact_btn.place(relx=0.02, rely=0.5, anchor="w")
-
-        ai_btn = ctk.CTkButton(
-            bar,
-            text="🤖 AI Assistant",
-            width=110,
-            font=("Arial", 16, "bold"),
-            fg_color=self.card_bg,
-            hover_color=self.hover,
-            text_color=self.text,
-            command=self.open_ai_assistant,
-        )
-        ai_btn.place(relx=0.98, rely=0.5, anchor="e")
-
-    # ─────────────────────── HEADER + NAVIGATION ───────────────────────────────
-    def _create_header(self):
-        """Create the main header with title and action buttons"""
-        header = ctk.CTkFrame(self, fg_color=self.card_bg, corner_radius=12)
-        header.pack(pady=20, padx=60, fill="x")
-        
-        self.main_sections['header'] = header
-
-        ctk.CTkLabel(
-            header, 
-            text="📊 Budget Assistant", 
-            font=("Arial",32,"bold"), 
-            text_color=self.text
-        ).pack(pady=(20,10))
-
-        btns = ctk.CTkFrame(header, fg_color="transparent")
-        btns.pack(pady=(0,20))
-
-        for i,(label,cmd) in enumerate([
-            ("Add Expense", self.add_expense),
-            ("Spending Analysis", self.view_summary),
-            ("Set Budget", self.set_budget),
-        ]):
-            ctk.CTkButton(
-                btns, text=label, command=cmd,
-                width=200, height=50,
-                fg_color=self.card_bg,
-                hover_color=self.hover,
-                text_color=self.text, 
-                font=("Arial",16, "bold"), 
-                corner_radius=12
-            ).grid(row=0, column=i, padx=20)
-
-    # ───────────────────────  Create Financial Insights ───────────────────────────────
-    def _create_financial_insights(self):
-        """Create AI Financial Insights section"""
-        self.insights_section = FinancialInsightsSection(self)
-        self.insights_section.pack(pady=10, padx=60, fill="x")
-
-        # Store reference
-        self.main_sections['insights'] = self.insights_section
-
-    # ────────────────────── Charts Section ─────────────────────────
-    def _create_charts_section(self):
-        """Create (or recreate) the charts display area and keep it in place"""
-        # --- Main container ---
-        sec = ctk.CTkFrame(
-            self, 
-            fg_color=self.bg, 
-            corner_radius=12, 
-            border_width=2, 
-            border_color=self.accent
-        )
-
-        # --- (Packing) -> always insert just before the 'coverter' frame ---
-        tabbed_tools = self.main_sections.get("tabbed_tools")  
-        if tabbed_tools and tabbed_tools.winfo_exists():
-            # Insert before tabbed tools so the visual order never changes
-            sec.pack(pady=10, padx=60, fill="x", before=tabbed_tools)
-        else:
-            # Initial creation (tabbed tools doesn't exist yet)
-            sec.pack(pady=10, padx=60, fill="x")
-            
-        # Store references in sections dictionary
-        self.main_sections['charts'] = sec
-        
-        # --- Chart titles ---
-        trow = ctk.CTkFrame(sec, fg_color="transparent")
-        trow.pack(fill="x", padx=20, pady=(20,0))
-
-        ctk.CTkLabel(
-            trow, 
-            text="Expense Chart", 
-            font=("Arial",20,"bold"), 
-            text_color=self.text
-        ).pack(side="left")
-
-        ctk.CTkLabel(
-            trow, 
-            text="By category", 
-            font=("Arial",20,"bold"), 
-            text_color=self.text
-        ).pack(side="right")
-        
-       # ---- Charts row ----
-        crow = ctk.CTkFrame(sec, fg_color="transparent")
-        crow.pack(fill="x", padx=20, pady=20)
-
-        left = ctk.CTkFrame(crow, fg_color=self.card_bg, corner_radius=12)
-        left.pack(side="left", expand=True, fill="both", padx=10)
-
-        right = ctk.CTkFrame(crow, fg_color=self.card_bg, corner_radius=12)
-        right.pack(side="right", expand=True, fill="both", padx=10)
-
-        # --- Draw the charts (helper functions) ---
-        self.show_line_chart(left)
-        self.show_donut_chart(right)
-
-
-    # ───────────────────────── LINE CHART ───────────────────────────────
+    # ──────── Show line Chart ────────
     def show_line_chart(self, parent):
-        """Display line chart showing expenses by month
-        Args:
-        parent (tk.Frame): The parent widget in which the chart will be embedded.
-        """
+        """Display line chart showing expenses by month"""
         try:
             months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
             data = self.get_expenses_by_month()
             x = np.arange(len(months))
             
-            # --- Y axis range ---
             max_val = max(data) if any(data) else 1
-            y_top = max(100, round(max_val * 1.25))  # Minimum 100 for better visualization
+            y_top = max(100, round(max_val * 1.25))
 
+            fig, ax = plt.subplots(figsize=(6, 3.5), dpi=100)
+            fig.patch.set_facecolor(self.colors["bg"])
+            ax.set_facecolor(self.colors["bg"])
 
-            # --- Prepare figure ---
-            fig, ax = plt.subplots(figsize=(5, 3.2), dpi=100)
-            fig.patch.set_facecolor(self.card_bg)
-            ax.set_facecolor(self.card_bg)
-
-            # --- Draw line/curve ---
             if len(set(data)) > 1 and sum(data) > 0:
-                # Smooth curve if we have varying data
                 x_smooth = np.linspace(x.min(), x.max(), 300)
                 y_smooth = PchipInterpolator(x, data)(x_smooth)
-
-                ax.plot(
-                    x_smooth, y_smooth,
-                    color=self.accent,
-                    linewidth=2.5,
-                    solid_capstyle='round',
-                    zorder=1,
-                )
+                ax.plot(x_smooth, y_smooth, color=self.colors["accent"], linewidth=3, zorder=1)
             else:
-                # Simple line if data is uniform or zero
-                ax.plot(
-                    x, data,
-                    color=self.accent,
-                    linewidth=2.5,
-                    marker="o",
-                    markersize=6,
-                    markerfacecolor=self.accent,
-                    markeredgewidth=1.5,
-                    markeredgecolor='white',
-                    zorder=1,
-                )
+                ax.plot(x, data, color=self.colors["accent"], linewidth=3, marker="o", 
+                       markersize=8, markerfacecolor=self.colors["accent"], 
+                       markeredgewidth=2, markeredgecolor='white', zorder=1)
 
-            # Points & labels (only if > 0)
             for xi, val in zip(x, data):
                 if val > 0:
-                    # point
-                    ax.scatter(
-                        xi, val,
-                        color=self.accent,
-                        edgecolors='white',
-                        s=60,
-                        linewidth=1.5,
-                        zorder=3
-                    )
-                    # label
-                    ax.text(
-                        xi, val + y_top * 0.03,
-                        f"${val:,.0f}",
-                        fontsize=9,
-                        color=self.text,
-                        ha='center',
-                        va='bottom',
-                        fontweight='bold'
-                    )
+                    ax.scatter(xi, val, color=self.colors["accent"], edgecolors='white', 
+                             s=80, linewidth=2, zorder=3)
+                    ax.text(xi, val + y_top * 0.03, f"${val:,.0f}", fontsize=10, 
+                           color=self.colors["text"], ha='center', va='bottom', fontweight='bold')
 
-            # Axes configuration
-            ax.set_xlim(-0.4, len(months) - 0.6) 
+            ax.set_xlim(-0.4, len(months) - 0.6)
             ax.set_ylim(0, y_top)
             ax.set_xticks(x)
-            ax.set_xticklabels(
-                months, 
-                color=self.text, 
-                fontsize=10, 
-                fontweight="bold"
-            )
-            ax.tick_params(axis='y', colors=self.text, labelsize=10)
-
-            # --- Grid ---
-            ax.grid(
-                axis='y', linestyle='--', linewidth=0.5, color='#43337a', alpha=0.5
-            )
+            ax.set_xticklabels(months, color=self.colors["text"], fontsize=11, fontweight="bold")
+            ax.tick_params(axis='y', colors=self.colors["text"], labelsize=10)
+            ax.grid(axis='y', linestyle='--', linewidth=0.5, color='#4a4a4a', alpha=0.5)
+            
             for spine in ax.spines.values():
                 spine.set_visible(False)
 
-            # --- Layout ---
-            ax.margins(x=0.02)          
-            fig.tight_layout(pad=1) # prevents cutting inside the card
-
-            # --- Insert into widget ---
+            fig.tight_layout(pad=1)
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().pack(padx=10, pady=10)
-
-            # --- Close figure to prevent memory leak --- (Important to remember)
+            canvas.get_tk_widget().pack(padx=15, pady=15, fill="both", expand=True)
             plt.close(fig)
 
         except Exception as e:
             print(f"Error creating line chart: {e}")
-            # Show error message in the chart area
-            error_label = ctk.CTkLabel(
-                parent,
-                text="Error loading chart",
-                font=("Arial", 14),
-                text_color=self.colors["error"]
-            )
-            error_label.pack(expand=True)      
+            error_label = ctk.CTkLabel(parent, text="Error loading chart", 
+                                     font=("Arial", 14), text_color=self.colors["error"])
+            error_label.pack(expand=True)
 
-    #  ───────────────────────── Donut CHART ───────────────────────────────
+    # ────────  Show donut Chart ────────
     def show_donut_chart(self, parent):
-        """Display donut chart showing expenses by category
-        Args:
-        parent (tk.Frame): The parent widget in which the chart will be embedded.
-        """
+        """Display donut chart showing expenses by category"""
         try:
             categories = ["Groceries", "Electronics", "Entertainment", "Other"]
             vals = self.get_expenses_by_category()
-
-            # --- Clean data ---
-            vals = [max(0, v) for v in vals]  # Ensure no negative values
+            vals = [max(0, v) for v in vals]
             total = sum(vals)
 
             if total == 0:
-                # Show "no data" message
                 no_data_frame = ctk.CTkFrame(parent, fg_color="transparent")
                 no_data_frame.pack(expand=True)
-
-                ctk.CTkLabel(
-                    no_data_frame,
-                    text="No expenses to display",
-                    text_color=self.text,
-                    font=("Arial", 16)
-                ).pack()
-                
-                ctk.CTkLabel(
-                    no_data_frame,
-                    text="Add some expenses to see the breakdown",
-                    text_color="#888",
-                    font=("Arial", 12)
-                ).pack(pady=(5, 0))
+                ctk.CTkLabel(no_data_frame, text="No expenses to display", 
+                           text_color=self.colors["text"], font=("Arial", 16)).pack()
+                ctk.CTkLabel(no_data_frame, text="Add some expenses to see the breakdown", 
+                           text_color=self.colors["text_secondary"], font=("Arial", 12)).pack(pady=(5, 0))
                 return
 
-            # --- Custom colors --- 
-            colors = [
-                "#7c3aed",  # strong purple
-                "#8b5cf6",  # light violet
-                "#a78bfa",  # lavender
-                "#ddd6fe",  # pastel
-            ][:len(vals)]
+            colors = ["#7c3aed", "#8b5cf6", "#a78bfa", "#ddd6fe"][:len(vals)]
 
-            # --- Create figure ---
-            fig, (ax1, ax2) = plt.subplots(
-                2, 1,
-                figsize=(4.5, 4.3),
-                dpi=100,
-                gridspec_kw={'height_ratios': [3.2, 1.2]}
-            )
-            fig.patch.set_facecolor(self.card_bg)
-            ax1.set_facecolor(self.card_bg)
-            ax2.set_facecolor(self.card_bg)
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(5.5, 4), dpi=100, 
+                                         gridspec_kw={'height_ratios': [3, 1.2]})
+            fig.patch.set_facecolor(self.colors["bg"])
+            ax1.set_facecolor(self.colors["bg"])
+            ax2.set_facecolor(self.colors["bg"])
 
-            # --- Draw donut ---
-            wedges, texts = ax1.pie(
-                vals, 
-                wedgeprops=dict(width=0.5), 
-                startangle=90, 
-                colors=colors
-            )
-            
-            # Add center circle
-            centre_circle = plt.Circle((0, 0), 0.45, fc=self.card_bg)
+            wedges, texts = ax1.pie(vals, wedgeprops=dict(width=0.5), startangle=90, colors=colors)
+            centre_circle = plt.Circle((0, 0), 0.45, fc=self.colors["bg"])
             ax1.add_artist(centre_circle)
             ax1.axis("equal")
             ax1.axis("off")
 
-            # Legend
+            # --- Legend ---
             ax2.axis("off")
             ax2.set_xlim(0, 1)
             ax2.set_ylim(0, 1)
             
-            spacing = 0.25
-            top_y = 1.0
-
             for i, (cat, val, color) in enumerate(zip(categories, vals, colors)):
                 percent = (val / total * 100) if total else 0
+                y_pos = 0.8 - i * 0.2
                 
-                # --- Category with bullet ---
-                ax2.text(
-                    0.05, 
-                    top_y - i * spacing,
-                    f"● {cat}",
-                    fontsize=11,
-                    color=color,
-                    ha="left",
-                    va="center",
-                    fontweight="bold"
-                )
+                ax2.text(0.05, y_pos, f"● {cat}", fontsize=11, color=color, 
+                        ha="left", va="center", fontweight="bold")
+                ax2.text(0.95, y_pos, f"${val:,.0f} ({percent:.0f}%)", fontsize=10, 
+                        color=self.colors["text"], ha="right", va="center", fontweight="bold")
 
-                # --- Amount and percentage --- 
-                ax2.text(
-                    0.95, 
-                    top_y - i * spacing,
-                    f"${val:,.0f} ({percent:.0f}%)",
-                    fontsize=10,
-                    color=self.text,
-                    ha="right",
-                    va="center",
-                    fontweight="bold"
-                )
-
-            fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, hspace=0.2)
-
-            # --- Display in app ---
+            fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, hspace=0.1)
             canvas = FigureCanvasTkAgg(fig, master=parent)
             canvas.draw()
-            canvas.get_tk_widget().pack(padx=10, pady=10)
-
-            # --- Close figure ---
+            canvas.get_tk_widget().pack(padx=15, pady=15, fill="both", expand=True)
             plt.close(fig)
         
         except Exception as e:
             print(f"Error creating donut chart: {e}")
-            traceback.print_exc()
-            # Show error message
-            error_label = ctk.CTkLabel(
-                parent,
-                text="Error loading chart",
-                font=("Arial", 14),
-                text_color=self.colors["error"]
-            )
+            error_label = ctk.CTkLabel(parent, text="Error loading chart", 
+                                     font=("Arial", 14), text_color=self.colors["error"])
             error_label.pack(expand=True)
 
-    #  ───────────────────────── Tabs Section ───────────────────────────────
-    def _create_tabbed_tools_section(self):
-        """Create tabbed section with Quick Stats, Transfer Calculator, and More Tools"""
-        # --- Main container ---
-        sec = ctk.CTkFrame(self, fg_color=self.card_bg, corner_radius=12)
-        sec.pack(pady=25, padx=60, fill="x")
+    # ──────────────────────── ACTION METHODS ────────────────────────
 
-        self.main_sections['tabbed_tools'] = sec
+    # ──────── Save expense ────────
+    def _save_expense(self):
+        """Save expense from Add Expense tab"""
+        try:
+            raw = self.expense_amount_var.get().strip()
+            if not raw:
+                messagebox.showwarning("Invalid Amount", "Please enter an amount")
+                return
 
-        # Tab buttom frame
-        tab_frame = ctk.CTkFrame(sec, fg_color="transparent", height=50)
-        tab_frame.pack(fill="x", padx=20, pady=(20, 10))
-        tab_frame.pack_propagate(False)
+            amount = float(raw.replace(',', '.'))
+            if amount <= 0:
+                messagebox.showwarning("Invalid Amount", "Amount must be positive")
+                return
+            if amount > 1_000_000:
+                messagebox.showwarning("Invalid Amount", "Amount too large")
+                return
 
-        # Content frame
-        self.tab_content = ctk.CTkFrame(sec, fg_color="transparent")
-        self.tab_content.pack(fill="both", expand=True, padx=20, pady=(0,20))
+            category = self.expense_cat_var.get()
+            description = self.expense_desc_var.get().strip()[:200]
+            
+            add_expense(amount, category, description)
+            messagebox.showinfo("Success", f"Expense of ${amount:.2f} recorded successfully!")
+            self._clear_expense_form()
+            
+            # --- Refresh dashboard if it's visible ---
+            if self.current_tab == "Dashboard":
+                self.show_tab("Dashboard")
 
-        # Tab buttons
-        tabs = [
-            ("📊 Quick Stats", self.show_quick_stats),
-            ("💱 Transfer Calculator", self.show_transfer_calc),
-            ("🔧 More Tools", self.show_more_tools)
-        ]
+        except ValueError:
+            messagebox.showwarning("Invalid Amount", "Please enter a valid number")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save expense: {str(e)}")
 
-        for i, (text, command) in enumerate(tabs):
-            btn = ctk.CTkButton(
-                tab_frame,
-                text=text,
-                command=command,
-                fg_color="#1e1b2e",
-                hover_color="#6d28d9",
-                text_color="#f9fafb",
-                width=140,
-                height=35,
-                font=("Arial", 14)
-            )
-            btn.pack(side="left", padx=(0, 10))
-            self.tab_buttons[text] = btn
+    # ──────── Clear expense form ────────
+    def _clear_expense_form(self):
+        """Clear the expense form"""
+        self.expense_amount_var.set("")
+        self.expense_cat_var.set("Groceries")
+        self.expense_desc_var.set("")
 
-        # Show Quick Stats by default
-        self.show_quick_stats()
+    # ──────── Save budget settings ────────
+    def _save_budget_settings(self):
+        """Save budget settings from Budget tab"""
+        try:
+            data = {}
+            
+            # --- Validate total budget ---
+            raw_total = self.total_budget_var.get().strip().replace(",", ".")
+            total = float(raw_total) if raw_total else 0.0
+            if total < 0:
+                raise ValueError("Total budget cannot be negative")
+            data["total"] = total
 
-    # ───────────────── Methods to manage the tabs ─────────────────
+            # --- Validate categories ---
+            for key, var in self.category_budget_vars.items():
+                raw_val = var.get().strip().replace(",", ".")
+                value = float(raw_val) if raw_val else 0.0
+                if value < 0:
+                    raise ValueError(f"{key} cannot be negative")
+                data[key] = value
 
-    def set_active_tab(self, tab_name):
-        """Update active tab styling"""
-        for name, btn in self.tab_buttons.items():
-            if name == tab_name:
-                btn.configure(fg_color="#6d28d9")
-            else:
-                btn.configure(fg_color="#1e1b2e")
+            save_budget(data)
+            messagebox.showinfo("Success", "Budget limits updated successfully!")
 
-    def clear_tab_content(self):
-        """Clear the tab content frame"""
-        for widget in self.tab_content.winfo_children():
-            widget.destroy()
+        except ValueError as e:
+            messagebox.showerror("Invalid Input", str(e))
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save budget: {str(e)}")
 
-    # ─────── Quick Stats ───────
-    def show_quick_stats(self):
-        """Show Quick Stats widget"""
-        self.clear_tab_content()
-        self.set_active_tab("📊 Quick Stats")
+    # ──────────────────────── CURRENCY METHODS ────────────────────────
 
-        stats_widgets = QuickStatsWidget(self.tab_content)
-        stats_widgets.pack(fill="both", expand=True)
-
-    # ─────── Transfer Calc ───────
-    def show_transfer_calc(self):
-        """Show transfer calculator"""
-        self.clear_tab_content()
-        self.set_active_tab("💱 Transfer Calculator")
-
-        # Container for transfer calculator
-        calc_container = ctk.CTkFrame(self.tab_content, fg_color="transparent")
-        calc_container.pack(fill="both", expand=True)
-
-        ctk.CTkLabel(
-            calc_container, 
-            text="Transfer Calculator",
-            font=("Arial", 20, "bold"),
-            text_color=self.text
-        ).pack(pady=10)
-
-        grid = ctk.CTkFrame(calc_container, fg_color="transparent")
-        grid.pack(pady=10)
-
-        # ---- Amount entry ---
-        ctk.CTkLabel(
-            grid,
-            text="Amount",
-            text_color=self.text
-        ).grid(row=0, column=0, sticky="e", padx=(0,10))
-
-        self.amount_var = tk.StringVar(value="1.0")
-        amt_entry = ctk.CTkEntry(
-            grid,
-            textvariable=self.amount_var,
-            width=100
-        )
-        amt_entry.grid(row=0, column=1, sticky="w")
-        amt_entry.bind("<KeyRelease>", lambda *_: self._update_conversion())
-
-        # --- From / to currencies ---
-        currs = ["USD", "EUR", "GBP", "MXN", "JPY", "CAD"]
-        self.from_var = tk.StringVar(value="USD")
-        self.to_var = tk.StringVar(value="EUR")
-
-        def _trace(*_):
-            self._update_conversion()
-
-        self.from_var.trace_add("write", _trace)
-        self.to_var.trace_add("write", _trace)
-
-        # --- From section ---
-        ctk.CTkLabel(
-            grid,
-            text="From",
-            text_color=self.text
-        ).grid(row=0, column=2, padx=(20, 4))
-
-        ctk.CTkOptionMenu(
-            grid,
-            variable=self.from_var,
-            values=currs,
-            width=80,
-            fg_color=self.accent,
-            button_color=self.accent,
-            text_color="white",
-            dropdown_fg_color="#2d235f",      # dark dropdown menu
-            dropdown_text_color="white"
-        ).grid(row=0, column=3)
-
-        # --- To section ---
-        ctk.CTkLabel(
-            grid,
-            text="To",
-            text_color=self.text
-        ).grid(row=0, column=4, padx=(20, 4))
-
-        ctk.CTkOptionMenu(
-            grid,
-            variable=self.to_var,
-            values=currs,
-            width=80,
-            fg_color=self.accent,
-            button_color=self.accent,
-            text_color="white",
-            dropdown_fg_color="#2d235f",
-            dropdown_text_color="white"
-        ).grid(row=0, column=5)
-
-        # --- Results labels ---
-        self.result_lbl = ctk.CTkLabel(
-            calc_container,
-            text="",
-            font=("Arial", 22, "bold"),
-            text_color=self.text
-        )
-        self.rate_lbl = ctk.CTkLabel(
-            calc_container,
-            text="",
-            font=("Arial", 14),
-            text_color="#c0c0c0"
-        )
-
-        self.result_lbl.pack(pady=(12, 0))
-        self.rate_lbl.pack(pady=(0, 20))
-
-        # --- Initial conversion ---
-        self._update_conversion()
-
-
-    # ─────── More tools ───────
-    def show_more_tools(self):
-        """Show additional tools/features"""
-        self.clear_tab_content()
-        self.set_active_tab("🔧 More Tools")
-
-        tools_frame = ctk.CTkFrame(self.tab_content, fg_color="transparent")
-        tools_frame.pack(fill="both", expand=True)
-
-        ctk.CTkLabel(
-            tools_frame,
-            text="Coming Soon!",
-            font=("Arial", 20, "bold"),
-            text_color="#a0a0a0"
-        ).pack(pady=40)
-
-        ctk.CTkLabel(
-            tools_frame,
-            text="Future features:\n• Export reports\n• Backup data\n• Import templates",
-            font=("Arial", 14),
-            text_color="#888"
-        ).pack()
-    
+    # ──────── Convert currency ────────
     def _convert_currency(self, amount: float, from_curr: str, to_curr: str):
-        """Convert amount from one currency to another using an external currency API.
-    
-    Args:
-        amount (float): The amount to be converted.
-        from_curr (str): Source currency code (e.g., 'USD').
-        to_curr (str): Target currency code (e.g., 'EUR').
-
-    Returns:
-        tuple: (converted amount (float), conversion rate (float))
-    """
+        """Convert currency using API"""
         if from_curr == to_curr:
             return amount, 1.0
-
         try:
             rate = get_exchange_rate(from_curr, to_curr) 
             if rate is None:
@@ -966,577 +1376,146 @@ class BudgetApp(ctk.CTk):
         except Exception as e:
             print(f"Currency conversion error: {e}")
             return 0.0, 0.0
-        
+
+    # ──────── Update currency ────────      
     def _update_conversion(self):
-        """Update the currency conversion display"""
-        # Check if variables exist before using them
-        if not hasattr(self, 'amount_var') or self.amount_var is None:
-            return
-        if not hasattr(self, 'result_lbl') or self.result_lbl is None:
-            return
-        if not hasattr(self, 'rate_lbl') or self.rate_lbl is None:
+        """Update currency conversion display"""
+        if not all([hasattr(self, attr) and getattr(self, attr) is not None 
+                   for attr in ['amount_var', 'result_lbl', 'rate_lbl']]):
             return
         
         try:
             amount_str = self.amount_var.get().strip()
-
-            if amount_str == "":
+            if not amount_str:
                 self.result_lbl.configure(text="Enter an amount")
                 self.rate_lbl.configure(text="")
                 return
             
-            try:
-                amount = float(amount_str.replace(',', ''))
-            except ValueError:
-                self.result_lbl.configure(text="Invalid amount")
-                self.rate_lbl.configure(text="Please enter a valid number")
-                return
-            
+            amount = float(amount_str.replace(',', ''))
             from_c = self.from_var.get()
             to_c = self.to_var.get()
             converted, rate = self._convert_currency(amount, from_c, to_c)
 
             if rate == 0.0:
                 self.result_lbl.configure(text="Conversion unavailable")
-                self.rate_lbl.configure(text="check your internet connection")
+                self.rate_lbl.configure(text="Check your internet connection")
                 return
 
-            self.result_lbl.configure(
-                text=f"{amount:.2f} {from_c} = {converted:.2f} {to_c}"
-            )
-            self.rate_lbl.configure(text=f"1 {from_c} = {rate:.3f} {to_c}")
+            self.result_lbl.configure(text=f"💰 {amount:.2f} {from_c} = {converted:.2f} {to_c}")
+            self.rate_lbl.configure(text=f"📊 1 {from_c} = {rate:.4f} {to_c}")
 
+        except ValueError:
+            self.result_lbl.configure(text="❌ Invalid amount")
+            self.rate_lbl.configure(text="Please enter a valid number")
         except Exception as e:
-            self.result_lbl.configure(text="Error")
+            self.result_lbl.configure(text="❌ Error")
             self.rate_lbl.configure(text="Please try again")
             print(f"Conversion error: {e}")
 
-    #  ───────────────────────── More methods ───────────────────────────────
-    # --- Add expense flow ---
-    def add_expense(self):
-        """Open add expense dialog"""
-        AddExpenseDialog(self, on_saved=self._refresh_charts)
+    # ──────────────────────── AI ASSISTANT METHODS ────────────────────────
 
-    # --- Summary popup ---
-    def view_summary(self):
-        """Show spending summary popup"""
-        try:
-            with get_db_session() as session:
-                exps = session.query(Expense).order_by(Expense.date.desc()).all()
-                session.expunge_all()
-
-            if not exps: 
-                messagebox.showinfo("Summary","No expenses recorded yet.")
-                return
-            
-            total = sum(e.amount for e in exps)
-            
-            # Group by category
-            by_category = {}
-            for e in exps:
-                cat = e.category or "Other"
-                by_category[cat] = by_category.get(cat, 0) + e.amount
-
-            # Build summary text
-            summary_lines = [f"Total Expenses: ${total:.2f}\n"]
-            summary_lines.append("By Category:")
-            for cat, amount in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
-                percentage = (amount / total * 100) if total > 0 else 0
-                summary_lines.append(f" • {cat}: ${amount:.2f} ({percentage:.1f}%)")
-
-            summary_lines.append(f"\nRecent Expenses (last 5):")
-            for e in exps[:5]:
-                date_str = e.date.strftime("%m/%d") if e.date else "Unknown"
-                summary_lines.append(f"  {date_str} - {e.category}: ${e.amount:.2f}")
-
-            messagebox.showinfo("Spending Summary", "\n".join(summary_lines))
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load summary: {str(e)}")
-
-    # --- Budget Dialog ---
-    def set_budget(self):
-        """Open budget setting dialog"""
-        BudgetDialog(self)
-
-    # --- Contact popup ---
-    def show_contact(self):
-        """Show contact information popup"""
-        messagebox.showinfo(
-            "Contact",
-            "AI Budget Tracker\n\n"
-            "An advanced budget management application with AI integration.\n\n"
-            "Features:\n"
-            "• AI-powered expense recording\n"
-            "• Visual spending analytics\n"
-            "• Currency conversion\n"
-            "• Bank statement import\n\n"
-            "Created by: Angel Jaen\n"
-            "Email: anlujaen@gmail.com\n"
-            "GitHub: github.com/yourusername/budget-tracker",
-        )
-
-    # --- AI Assistant ---
-    def open_ai_assistant(self):
-        """Open AI chat assistant window"""
-        ChatWindow(self)
-
-    # --- Refresh Charts ---
-    def _refresh_charts(self):
-        """Safely refresh only the charts section"""
-        try:
-            # --- close all the figures before recreate ---
-            plt.close('all')
-
-            # Only destroy and recreate the charts section
-            if 'charts' in self.main_sections and self.main_sections["charts"].winfo_exists():
-                self.main_sections['charts'].destroy()
-                del self.main_sections['charts']
-
-            # Recreate only the charts
-            self._create_charts_section()
-
-            # Also refresh insights and stats if they exist
-            if hasattr(self, 'insights_section'):
-                self.insights_section.refresh_insights()
-            
-            if hasattr(self, 'tab_content'):
-                # Refresh current tab
-                for name, btn in self.tab_buttons.items():
-                    if btn.cget("fg_color") == "#6d28d9":  # Active tab
-                        if name == "📊 Quick Stats":
-                            self.show_quick_stats()
-                        break
-            
-        except Exception as e:
-            print(f"Error refreshing charts: {e}")
-            traceback.print_exc()
-            messagebox.showerror("Error", "Unable to refresh. Please restart.")
-
-#  ───────────────────────── AddExpenseDialog Class ─────────────────────────────── 
-class AddExpenseDialog(ctk.CTkToplevel):
-    """Dialog window allowing users to input new expenses manually.
-    
-        Args:
-            parent (BudgetApp): Reference to the main application.
-            on_saved (callable): Callback to refresh main UI after saving expense.
-    """
-    def __init__(self, parent: BudgetApp, on_saved):
-        super().__init__(parent)
-        self.title("Add Expense")
-        self.geometry("340x320")
-        self.grab_set()
-        self.resizable(False, False)
-        self.on_saved = on_saved
-
-        # --- Use parent colors ---
-        self.configure(fg_color=parent.card_bg)
-
-        # --- Amount ---
-        ctk.CTkLabel(
-            self, 
-            text="Amount", 
-            font=("Arial", 14, "bold"),
-            text_color=parent.text
-            ).pack(pady=(20,6))
-        
-        self.amount_var = tk.StringVar(value="")
-        amount_entry = ctk.CTkEntry(
-            self, 
-            textvariable=self.amount_var, 
-            width=120,
-            placeholder_text="0.00"
-        )
-        amount_entry.pack()
-        amount_entry.focus() # Auto-focus on amount
-
-        # --- Category ---
-        ctk.CTkLabel(
-            self, 
-            text="Category",
-            text_color=parent.text
-        ).pack(pady=(16, 6))
-
-        self.cat_var = tk.StringVar(value="Groceries")
-        ctk.CTkOptionMenu(
-            self,
-            variable=self.cat_var,
-            values=["Groceries", "Electronics", "Entertainment", "Other"],
-            width=200,
-            fg_color=parent.accent,
-            button_color=parent.accent,
-        ).pack()
-
-        # --- Description ---
-        ctk.CTkLabel(
-            self, 
-            text="Description (optional)",
-            text_color=parent.text
-        ).pack(pady=(16, 6))
-
-        self.desc_var = tk.StringVar()
-        ctk.CTkEntry(
-            self, 
-            textvariable=self.desc_var, 
-            width=220,
-            placeholder_text="What did you buy?"
-        ).pack()
-
-        # --- Buttons ---
-        row = ctk.CTkFrame(self, fg_color="transparent")
-        row.pack(pady=24)
-
-        ctk.CTkButton(
-            row, 
-            text="Save", 
-            width=100, 
-            command=self._save,
-            fg_color=parent.colors["success"],
-            hover_color="#059669"
-            ).grid(row=0, column=0, padx=10)
-        
-        ctk.CTkButton(
-            row,
-            text="Cancel",
-            width=100,
-            fg_color="#444",
-            hover_color="#555",
-            command=self.destroy,
-            ).grid(row=0, column=1, padx=10)
-        
-        # Bind Enter key to save 
-        self.bind('<Return>', lambda e: self._save())
-
-    # --- Save Expenses Method---
-    def _save(self):
-        """Save the expense to database"""
-        try:
-            raw = self.amount_var.get().strip()
-            
-            if not raw:
-                messagebox.showwarning(
-                "Invalid Amount", 
-                "Please enter an amount",
-                parent=self
-                )
-                return
-            # Allow input with commas and decimal points
-            # E.g.: "1,234.56" -> 1234.56
-            cleaned = raw.replace(',', '.')
-
-            try:
-                amount = float(cleaned)
-                if amount <= 0:
-                    messagebox.showwarning(
-                        "Invalid Amount",
-                        "Amount must be a positive number.",
-                        parent=self,
-                    )
-                    return
-                if amount > 1_000_000: 
-                    messagebox.showwarning(
-                        "Invalid Amount",
-                        "Amount seems too large. Please verify.",
-                        parent=self
-                    )
-                    return
-            except ValueError:
-                messagebox.showwarning(
-                    "Invalid Amount",
-                    "Please enter a valid number (e.g., 123.45)",
-                    parent=self
-                )
-                return
-
-            category = self.cat_var.get()
-            description = self.desc_var.get().strip()
-
-            if len(description) > 200:
-                description = description[:200]
-            
-            # Save expense 
-            add_expense(amount, category, description)
-
-            messagebox.showinfo(
-                "Saved", 
-                f"Expense of ${amount:.2f} recorded successfully!",
-                parent=self
-            )
-
-            self.destroy()
-            self.on_saved()
-
-        except Exception as e:
-            messagebox.showerror(
-                "Error", 
-                f"Failed to save expense: {str(e)}",
-                parent=self
-            )    
-
-# ───────────────────────────── CHAT WINDOW ───────────────────────────────────
-class ChatWindow(ctk.CTkToplevel):
-    """Interactive window enabling user conversations with the integrated AI assistant.
-    
-    This window supports AI-assisted budget management tasks such as adding, querying,
-    and importing expenses through natural language interaction.
-    
-    Args:
-        parent (BudgetApp): Reference to the main application window.
-    """
-    def __init__(self, parent: BudgetApp):
-        super().__init__(parent)
-        self.title("AI Assistant")
-        self.geometry("500x650")
-        self.grab_set()
-        
-        # Access parent colors
-        self.parent_app = parent
-        self.configure(fg_color=parent.bg)
-
-        self.history = []  # [(role, content), ...]
-
-        # --- Header ---
-        header = ctk.CTkFrame(self, fg_color=parent.card_bg, height=50)
-        header.pack(fill="x", padx=10, pady=(10,0))
-        header.pack_propagate(False)
-
-        ctk.CTkLabel(
-            header,
-            text="🤖 AI Budget Assistant",
-            font=("Arial", 18, "bold"),
-            text_color=parent.text
-        ).pack(expand=True)
-
-        # --- Chat display using standard Text widget instead of CTkTextbox ---
-        # This is because CTkTextbox doesn't support font in tag_config
-        chat_frame = ctk.CTkFrame(self, fg_color=parent.card_bg, corner_radius=10)
-        chat_frame.pack(padx=10, pady=10, fill="both", expand=True)
-        
-        self.chatbox = tk.Text(
-            chat_frame,
-            width=50,
-            height=20,
-            state="disabled",
-            bg=parent.card_bg,
-            fg=parent.text,
-            font=("Arial", 14, "bold"),
-            wrap="word",
-            borderwidth=0,
-            highlightthickness=0
-        )
-        self.chatbox.pack(padx=10, pady=10, fill="both", expand=True)
-
-        # Configure text tags for standard Text widget
-        self.chatbox.tag_config("user_header", 
-                              foreground="#a78bfa",
-                              font=("Arial", 12, "bold"))
-        self.chatbox.tag_config("user", 
-                              foreground="#c4b5fd")
-        self.chatbox.tag_config("assistant_header", 
-                              foreground="#60a5fa",
-                              font=("Arial", 12, "bold"))
-        self.chatbox.tag_config("assistant", 
-                              foreground=self.parent_app.text)
-
-        # --- Input area ---
-        entry_row = ctk.CTkFrame(self, fg_color="transparent")
-        entry_row.pack(pady=(0,10), fill="x", padx=10)
-
-        # --- Import button ---
-        import_btn = ctk.CTkButton(
-            entry_row,
-            text="📂",
-            width=40,
-            height=40,
-            corner_radius=20,
-            fg_color=parent.accent,
-            hover_color=parent.hover,
-            text_color="white",
-            command=self._import_bank_statement,
-            font=("Arial", 16, "bold")
-        )
-        import_btn.pack(side="left", padx=(0, 10))
-
-        # --- Message Input ---
-        self.msg_var = tk.StringVar()
-        entry = ctk.CTkEntry(
-            entry_row, 
-            textvariable=self.msg_var,
-            placeholder_text="Type your message...",
-            height=40,
-            corner_radius=20
-        )
-        entry.pack(side="left", expand=True, fill="x", padx=(0, 10))
-        entry.bind("<Return>", lambda e: self._send())
-        entry.focus()
-
-        # --- Send button ---
-        self.send_btn = ctk.CTkButton(
-            entry_row,
-            text="Send", 
-            width=70,
-            height=40,
-            corner_radius=20,
-            font=("Arial", 16, "bold"),
-            fg_color=parent.accent,  
-            hover_color=parent.hover, 
-            text_color="white", 
-            command=self._send
-        )
-        self.send_btn.pack(side="right")
-
-        # Welcome message
-        self._append(
-            "assistant", 
-            "Hello! I'm your AI budget assistant. I can help you:\n"
-            "• Record expenses (e.g., 'Add $50 for groceries')\n"
-            "• Check spending (e.g., 'How much did I spend on entertainment?')\n"
-            "• Import bank statements (click 📎)\n\n"
-            "How can I help you today?"
-        )
-
-    # --- Import Bank Statement Method ---
+    # ──────── Import bank statement ────────
     def _import_bank_statement(self):
-        """Import bank statement from CSV or PDF file"""
+        """Import bank statement from AI Assistant tab"""
         filetypes = [("CSV files", "*.csv")]
         if PDF_SUPPORT:
             filetypes.append(("PDF files", "*.pdf"))
         filetypes.append(("All files", "*.*"))
         
         file_path = filedialog.askopenfilename(
-            title="Select Bank Statement",
-            filetypes=filetypes,
-            parent=self
+            title="Select Bank Statement", 
+            filetypes=filetypes
         )
         if not file_path:
             return
         
         filename = os.path.basename(file_path)
-        self._append("user", f"Importing bank statement: {filename}")
+        self._append_chat_message("user", f"Importing bank statement: {filename}")
         
         try:
             if file_path.lower().endswith(".csv"):
                 result = load_bank_statement_csv(file_path, insert_payment)
                 if isinstance(result, dict) and result.get("imported", 0) > 0:
-                    self._append(
-                        "assistant", 
-                        f"✅ CSV imported successfully!\n"
-                        f"Imported: {result['imported']} expenses\n"
-                        f"Failed: {result.get('failed', 0)}"
-                    )
-                if result.get("expenses"):
-                    lines = ["📄 Imported expenses:"]
-                    for e in result["expenses"]:
-                        date = e.date.strftime("%Y-%m-%d") if e.date else "Unknown"
-                        desc = f" | {e.description}" if e.description else ""
-                        lines.append(f" • ID {e.id} | ${e.amount:.2f} | {e.category} | {date}{desc}")
-                    self._append("assistant", "\n".join(lines))
-                else:    
-                    self._append("assistant", "❌ No valid expenses found in CSV")
-                self.parent_app._refresh_charts()
-
-            elif file_path.lower().endswith(".pdf"):
-                if PDF_SUPPORT:
-                    result = load_bank_statement_pdf(file_path, insert_payment)
-                    
-                    if isinstance(result, dict) and result.get("imported", 0) > 0:
-                        self._append(
-                            "assistant", 
-                            f"✅ PDF imported successfully!\n"
-                            f"Imported: {result['imported']} expenses\n"
-                            f"Failed: {result.get('failed', 0)}"
-                        )
-                    
+                    self._append_chat_message("assistant", 
+                                            f"✅ CSV imported successfully!\n"
+                                            f"Imported: {result['imported']} expenses\n"
+                                            f"Failed: {result.get('failed', 0)}")
                     if result.get("expenses"):
                         lines = ["📄 Imported expenses:"]
-                        for e in result["expenses"]:
+                        for e in result["expenses"][:5]:  
                             date = e.date.strftime("%Y-%m-%d") if e.date else "Unknown"
                             desc = f" | {e.description}" if e.description else ""
-                            lines.append(f" • ID {e.id} | ${e.amount:.2f} | {e.category} | {date}{desc}")
-                        self._append("assistant", "\n".join(lines))
-                        
-                    else:
-                        self._append("assistant", "❌ No valid expenses found in PDF")
-                    
-                    self.parent_app._refresh_charts()
+                            lines.append(f" • ${e.amount:.2f} | {e.category} | {date}{desc}")
+                        if len(result["expenses"]) > 5:
+                            lines.append(f" • ... and {len(result['expenses']) - 5} more")
+                        self._append_chat_message("assistant", "\n".join(lines))
                 else:
-                    self._append(
-                        "assistant", 
-                        "❌ PDF support is not available." 
-                        "Please install pdfplumber:\n"
-                        "pip install pdfplumber"
-                    )
+                    self._append_chat_message("assistant", "❌ No valid expenses found in CSV")
+                
+                # --- Refresh dashboard if it's visible ---
+                if self.current_tab == "Dashboard":
+                    self.show_tab("Dashboard")
             else:
-                self._append("assistant", "❌ Unsupported file format. Please use CSV or PDF files.")
+                self._append_chat_message("assistant", "❌ Unsupported file format. Please use CSV files.")
 
         except Exception as e:
-            self._append("assistant", f"❌ Error importing file: {str(e)}")
+            self._append_chat_message("assistant", f"❌ Error importing file: {str(e)}")
             print(f"Import error: {e}")
-            traceback.print_exc()
 
-    # --- Append Method ---
-    def _append(self, role: str, text: str):
+    # ──────── Append chat message ────────
+    def _append_chat_message(self, role: str, text: str):
         """Add message to chat display"""
         self.chatbox.configure(state="normal")
-
         tag = "user" if role == "user" else "assistant"
         prefix = "You: " if role == "user" else "Assistant: "
-        # Add timestamp
         timestamp = datetime.now().strftime("%H:%M")
         
-        # Insert text with tags
         self.chatbox.insert("end", f"[{timestamp}] {prefix}\n", f"{tag}_header")
         self.chatbox.insert("end", f"{text}\n\n", tag)
-
         self.chatbox.configure(state="disabled")
-        self.chatbox.see("end") # Scroll to bottom
+        self.chatbox.see("end")
 
-    # --- Send Method ---
-    def _send(self):
-        """Send message to AI and get response"""
+    # ──────── Send message ────────
+    def _send_message(self):
+        """Send message to AI assistant"""
         msg = self.msg_var.get().strip()
         if not msg:
             return
         
         self.msg_var.set("")
-        self._append("user", msg)
-        self.history.append(("user", msg))
-
-        # Disable send button while procesing
+        self._append_chat_message("user", msg)
+        self.chat_history.append(("user", msg))
         self.send_btn.configure(state="disabled", text="...")
 
         try:
-            reply = chat_completion(self.history)
+            reply = chat_completion(self.chat_history)
 
             if reply["type"] == "text":
-                # Normal response
-                self.history.append(("assistant", reply["content"]))
-                self._append("assistant", reply["content"])
-
+                self.chat_history.append(("assistant", reply["content"]))
+                self._append_chat_message("assistant", reply["content"])
             elif reply["type"] == "function_call":
-                # Execute function
                 name, args = reply["name"], reply["arguments"]
-                result = self._execute_functions(name, args)
-                self.history.append(("assistant", result))
-                self._append("assistant", result)
+                result = self._execute_ai_function(name, args)
+                self.chat_history.append(("assistant", result))
+                self._append_chat_message("assistant", result)
         
         except Exception as e:
             err = f"❌ Sorry, I encountered an error: {e}"
-            self.history.append(("assistant", err))
-            self._append("assistant", err)
-            traceback.print_exc()
+            self.chat_history.append(("assistant", err))
+            self._append_chat_message("assistant", err)
 
         finally:
-            # Re-enable send button
             self.send_btn.configure(state="normal", text="Send")
 
-    # --- Execute the functions requested ---
-    def _execute_functions(self, name: str, args: dict) -> str:
-        """Wrapper to call domain functions safely and return a user-friendly message"""
+    # ──────── Execute AI function ────────
+    def _execute_ai_function(self, name: str, args: dict) -> str:
+        """Execute AI function calls"""
         try:
-            if name ==  "insert_payment":
+            if name == "insert_payment":
                 insert_payment(**args)
-                self.parent_app._refresh_charts()
+                # --- Refresh dashboard if it's visible ---
+                if self.current_tab == "Dashboard":
+                    self.show_tab("Dashboard")
                 desc = f" ({args['description']})" if args.get("description") else ""
                 return f"✅ Expense recorded: ${args['amount']} for {args['category']}{desc}"
 
@@ -1544,7 +1523,9 @@ class ChatWindow(ctk.CTkToplevel):
                 from src.core.database import delete_payment
                 success = delete_payment(**args)
                 if success:
-                    self.parent_app._refresh_charts()
+                    # --- Refresh dashboard if it's visible ---
+                    if self.current_tab == "Dashboard":
+                        self.show_tab("Dashboard")
                     return f"✅ Expense #{args['expense_id']} deleted successfully."
                 else:
                     return f"❌ Could not find expense #{args['expense_id']}"
@@ -1560,182 +1541,16 @@ class ChatWindow(ctk.CTkToplevel):
                 if not expenses:
                     return f"No expenses found for {args['category']}."
                 lines = [f"💵 Expenses in {args['category'].capitalize()}:"]
-                for e in expenses:
+                for e in expenses[:10]:  # Limit to 10 for readability
                     lines.append(f" • ID: {e['id']} | ${e['amount']:.2f} on {e['date']} | {e['description']}")
+                if len(expenses) > 10:
+                    lines.append(f" • ... and {len(expenses) - 10} more")
                 return "\n".join(lines)
             
             else:
                 return f"❌ Unknown function: {name}"
         except Exception as e:
             return f"❌ Error executing {name}: {e}"
-
-# ────────────────────────── BUDGET DIALOG ────────────────────────────────────
-class BudgetDialog(ctk.CTkToplevel):
-    """Dialog window for setting budget limits"""
-    def __init__(self, parent: BudgetApp):
-        super().__init__(parent)
-        self.title("Set Budget Limits")
-        self.geometry("360x450")
-        self.grab_set()
-        self.resizable(False, False)
-
-        self.parent_app = parent
-        self.configure(fg_color=parent.card_bg)
-        
-        # Get to current budgets
-        current = get_budget() or {}
-
-        # --- Title ---
-        ctk.CTkLabel(
-            self, 
-            text="Monthly Budget Limits",
-            font=("Arial", 18, "bold"),
-            text_color=parent.text
-        ).pack(pady=(20, 20))
-
-        # --- Budget inputs frame ---
-        inputs_frame = ctk.CTkFrame(self, fg_color="transparent")
-        inputs_frame.pack(padx=20, pady=10)
-
-        # --- Total budget ----
-        ctk.CTkLabel(
-            inputs_frame,
-            text="Total Budget:",
-            text_color=parent.text,
-            font=("Arial", 14)
-        ).grid(row=0, column=0, sticky="e", padx=(0,10), pady=10)
-
-        self.total_var = tk.StringVar(value=str(current.get("total", 2000.0)))
-        total_entry = ctk.CTkEntry(
-            inputs_frame,
-            textvariable=self.total_var,
-            width=120,
-            placeholder_text="0.00"
-        )
-        total_entry.grid(row=0, column=1, pady=10)
-
-        # --- Category budgets ---
-        self.category_vars = {}
-        categories = [
-            ("Groceries", "groceries", 600.0),
-            ("Entertainment", "entertainment", 300.0),
-            ("Electronics", "electronics", 500.0),
-            ("Other", "other", 200.0)
-        ]
-
-        for i, (display_name, key, default) in enumerate(categories, start=1):
-            ctk.CTkLabel(
-                inputs_frame,
-                text=f"{display_name}:",
-                text_color=parent.text
-            ).grid(row=i, column=0, sticky="e", padx=(0,10), pady=8)
-
-            var = tk.StringVar(value=str(current.get(key, default)))
-            self.category_vars[key] = var
-
-            ctk.CTkEntry(
-                inputs_frame,
-                textvariable=var,
-                width=120,
-                placeholder_text="0.00"
-            ).grid(row=i, column=1, pady=8)
-
-        # --- Info Label ---
-        info_label = ctk.CTkLabel(
-            self,
-            text="Set 0 to disable budget limit for a category",
-            text_color="#888",
-            font=("Arial", 11)
-        )
-        info_label.pack(pady=10)
-
-        # --- Buttons ---
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(pady=20)
-
-        ctk.CTkButton(
-            btn_row,
-            text="Save",
-            width=100,
-            command=self._save,
-            fg_color=parent.colors["success"],
-            hover_color="#059669"
-        ).grid(row=0, column=0, padx=10)
-
-        ctk.CTkButton(
-            btn_row,
-            text="Cancel",
-            width=100,
-            fg_color="#444",
-            hover_color="#555",
-            command=self.destroy,
-        ).grid(row=0, column=1, padx=10)
-
-    # --- Save budget Method ---
-    def _save(self):
-        """Save budget settings to database"""
-        try:
-            # Collect all budget values
-            data = {}
-
-            # --- Validate total budget ---
-            try:
-                raw_total = self.total_var.get().strip().replace(",", ".")
-                if raw_total== "":
-                    total = 0.0
-                else:
-                    total = float(raw_total)
-                
-                if total < 0:
-                    raise ValueError("Cannot be negative")
-                
-                data["total"] = total
-            except ValueError as e:
-                messagebox.showerror(
-                    "Invalid Total Budget",
-                    "Please enter a valid positive number",
-                    parent=self
-                )
-                return
-
-            # --- Validate categories ---
-            for key, var in self.category_vars.items():
-                try:
-                    raw_val= var.get().strip().replace(",", ".")
-                    if raw_val == "":
-                        value = 0.0
-                    else:
-                        value = float(raw_val)
-                    
-                    if value < 0:
-                        raise ValueError(f"{key} cannot be negative")
-                    
-                    data[key] = value
-                except ValueError:
-                    messagebox.showerror(
-                        "Invalid Value",
-                        f"Please enter a valid number for {key}",
-                        parent=self
-                    )
-                    return
-
-            # Save to database
-            save_budget(data)
-
-            messagebox.showinfo(
-                "Saved", 
-                "Budget limits updated successfully!",
-                parent=self
-            )
-            self.destroy()
-
-        except Exception as e:
-            messagebox.showerror(
-                "Error", 
-                f"Failed to save budget: {str(e)}",
-                parent=self
-            )
-
 
 if __name__ == "__main__":
     app = BudgetApp()

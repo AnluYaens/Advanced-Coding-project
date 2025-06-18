@@ -1,8 +1,8 @@
 # —— Entorno virtual ————————————————————————————————
 venv/
-venv311/
 .env/         # a veces el entorno virtual se llama así
 .env
+.venv/
 # —— Bases de datos SQLite y derivados ————————————————————
 # Ignora cualquier fichero .db
 *.db
