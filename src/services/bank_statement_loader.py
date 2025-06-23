@@ -1,6 +1,7 @@
 import pandas as pd
+from src.core.database import insert_payment_safe
 
-def load_bank_statement_csv(file_path, insert_payment_func):
+def load_bank_statement_csv(file_path):
     """
     Load bank statement data from CSV file and insert each expense.
     
@@ -80,18 +81,19 @@ def load_bank_statement_csv(file_path, insert_payment_func):
 
                 date_str = str(row[found_columns['date']]).strip()
 
-                print(f"[IMPORT] Row {idx+1}: ${amount:.2f} - {category} - {date_str}")
-
                 # Use safe version that handles multiple date formats
-                from src.core.database import insert_payment_safe
                 inserted = insert_payment_safe(amount, category, description,date_str)
                 imported_expenses.append(inserted)
+
+                
 
                 result["imported"] += 1
 
             except Exception as e:
                 result["failed"] += 1
                 result["errors"].append(f"Row {idx+1}: {str(e)}")
+        
+        print(f"[IMPORT PDF] Completed: {result['imported']} imported, {result['failed']} failed")
 
         result["expenses"] = imported_expenses
         return result

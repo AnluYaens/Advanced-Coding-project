@@ -2,7 +2,7 @@ import pdfplumber
 import re
 from src.core.database import insert_payment_safe
 
-def load_bank_statement_pdf(file_path, insert_payment_func):
+def load_bank_statement_pdf(file_path):
     """
     Load bank statement data from a PDF file.
     Supports both structured tables and plain text formats.
@@ -88,7 +88,7 @@ def load_bank_statement_pdf(file_path, insert_payment_func):
                                 category = "Electronics"
                             else:
                                 category = "Other"
-
+                            
                             inserted = insert_payment_safe(amount, category, description, date_str)
                             imported_expenses.append(inserted)
                             result["imported"] += 1

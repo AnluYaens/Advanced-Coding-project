@@ -232,13 +232,56 @@ def add_expense(amount: float, category: str, description: str = "") -> None:
         logger.error(f"Error adding expense: {e}")
         raise
 
-def get_all_expenses() -> List[Expense]:
-    """Get all expenses."""
+def update_expense(expense_id: int, new_data: Dict) -> bool:
+    """Updates an existing expense record by its ID."""
     try:
         with get_db_session() as session:
-            # Make sure to return detached objects
-            expenses = session.query(Expense).order_by(Expense.date.desc()).all()
-            # Detach from session
+            expense = session.query(Expense).filter(Expense.id == expense_id).first()
+            if not expense:
+                return False
+            
+            # Actualizar campos del objeto expense con los nuevos datos
+            for key, value in new_data.items():
+                if hasattr(expense, key):
+                    setattr(expense, key, value)
+            
+            # La fecha necesita un tratamiento especial si es un string
+            if 'date' in new_data and isinstance(new_data['date'], str):
+                try:
+                    expense.date = datetime.strptime(new_data['date'], '%Y-%m-%d')
+                except ValueError:
+                    logger.warning(f"Invalid date format for update: {new_data['date']}. Keeping original.")
+
+            logger.info(f"Expense updated: ID {expense_id}")
+            return True # El commit se hace automáticamente al salir del 'with'
+            
+    except Exception as e:
+        logger.error(f"Error updating expense: {e}")
+        raise
+
+def get_all_expenses(limit: int = None, category: str = None, month: int = None, year: int = None) -> List[Expense]:
+    """
+    Get all expenses with optional filters for category, month, and year.
+    """
+    try:
+        with get_db_session() as session:
+            from sqlalchemy import extract
+            query = session.query(Expense).order_by(Expense.date.desc())
+
+            # Aplicar filtros si se proporcionan
+            if category and category.lower() != 'all':
+                query = query.filter(Expense.category == category)
+            
+            if month and month != 0:
+                query = query.filter(extract('month', Expense.date) == month)
+
+            if year and year != 0:
+                query = query.filter(extract('year', Expense.date) == year)
+
+            if limit:
+                query = query.limit(limit)
+            
+            expenses = query.all()
             session.expunge_all()
             return expenses
             
