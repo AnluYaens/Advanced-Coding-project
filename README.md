@@ -1,6 +1,6 @@
 # 💰 AI Budget Tracker
 
-**An advanced budget tracking application with integrated AI assistant, interactive visualizations, and intelligent expense management.**
+![Budget Assistant banner](src/assets/icons/Budget_Tracker_Assistant.png)
 
 ## ✨ Features
 
