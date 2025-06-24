@@ -13,7 +13,7 @@ def load_bank_statement_csv(file_path):
     imported_expenses = []
 
     try:
-        # Read CSV with error handling
+        # --- Read CSV with error handling ---
         try:
             df = pd.read_csv(file_path, encoding='utf-8')
         except UnicodeDecodeError:
@@ -21,9 +21,9 @@ def load_bank_statement_csv(file_path):
             df = pd.read_csv(file_path, encoding='latin-1')
         
         # --- validate required columns ---
-        df.columns = df.columns.str.strip() # Removes spaces
+        df.columns = df.columns.str.strip()
 
-        # Map common column names
+        # --- Map common column names ---
         column_mappings = {
             'amount': ['Amount', 'Monto', 'Value', 'Valor'],
             'category': ['Category', 'Categoría', 'Type', 'Tipo'],
@@ -31,7 +31,7 @@ def load_bank_statement_csv(file_path):
             'date': ['Date', 'Fecha', 'Transaction Date', 'Fecha Transacción']
         }
         
-        # Find the correct columns
+        # --- Find the correct columns ---
         found_columns =  {}
         for key, possible_names in column_mappings.items():
             for col in df.columns:
@@ -39,28 +39,28 @@ def load_bank_statement_csv(file_path):
                     found_columns[key] = col
                     break
         
-        # Verify we have all necessary columns
+        # --- Verify we have all necessary columns ---
         missing = [k for k in ['amount', 'category', 'description', 'date'] if k not in found_columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
         
-        # Process each row
+        # --- Process each row ---
         for idx, row in df.iterrows():
             try:
-                # Extract and clean data
+                # --- Extract and clean data ---
                 amount_str = str(row[found_columns['amount']]).strip()
-                # Handle different number formats (1,234.56 or 1.234,56)
+                # --- Handle different number formats (1,234.56 or 1.234,56) ---
                 amount_str = amount_str.replace('$', '').replace('€', '').strip()
                 if ',' in amount_str and '.' in amount_str:
-                    # Determine which is the decimal separator
+                    # --- Determine which is the decimal separator ---
                     if amount_str.rindex(',') > amount_str.rindex(','):
-                        # European format: 1.234,56
+                        # --- European format: 1.234,56 ---
                         amount_str = amount_str.replace('.', '').replace(',', '.')
                     else:
-                        # American format: 1,234.56
+                        # --- American format: 1,234.56 ---
                         amount_str = amount_str.replace(',', '')
                 else:
-                    # Only commas or dots
+                    # --- Only commas or dots ---
                     amount_str = amount_str.replace(',', '.')
 
                 amount = float(amount_str)
@@ -81,7 +81,7 @@ def load_bank_statement_csv(file_path):
 
                 date_str = str(row[found_columns['date']]).strip()
 
-                # Use safe version that handles multiple date formats
+                # --- Use safe version that handles multiple date formats ---
                 inserted = insert_payment_safe(amount, category, description,date_str)
                 imported_expenses.append(inserted)
 

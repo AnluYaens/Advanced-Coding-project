@@ -1,0 +1,43 @@
+{
+  "budgets": [
+    { "category": "total", "limit": 2000.0 },
+    { "category": "groceries", "limit": 600.0 },
+    { "category": "entertainment", "limit": 300.0 },
+    { "category": "electronics", "limit": 500.0 },
+    { "category": "other", "limit": 200.0 }
+  ],
+  "expenses": [
+    { "amount": 225.00, "category": "Electronics", "description": "New airfryer", "date": "2025-06-15" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-06-05" },
+    { "amount": 85.40, "category": "Groceries", "description": "Weekly grocery run", "date": "2025-06-08" },
+    { "amount": 120.00, "category": "Other", "description": "Summer clothes", "date": "2025-06-15" },
+    { "amount": 65.20, "category": "Groceries", "description": "Restocking pantry", "date": "2025-06-16" },
+    { "amount": 22.50, "category": "Entertainment", "description": "Movie night tickets", "date": "2025-06-21" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-05-05" },
+    { "amount": 78.00, "category": "Groceries", "description": "Groceries for the week", "date": "2025-05-12" },
+    { "amount": 250.00, "category": "Electronics", "description": "New monitor", "date": "2025-05-19" },
+    { "amount": 95.10, "category": "Groceries", "description": "", "date": "2025-05-25" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-04-05" },
+    { "amount": 110.00, "category": "Other", "description": "Birthday gift for a friend", "date": "2025-04-15" },
+    { "amount": 88.60, "category": "Groceries", "description": "Groceries", "date": "2025-04-22" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-03-05" },
+    { "amount": 75.00, "category": "Groceries", "description": "Groceries", "date": "2025-03-10" },
+    { "amount": 49.99, "category": "Entertainment", "description": "Video game purchase", "date": "2025-03-20" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-02-05" },
+    { "amount": 150.00, "category": "Other", "description": "Winter jacket", "date": "2025-02-12" },
+    { "amount": 92.30, "category": "Groceries", "description": "Weekly groceries", "date": "2025-02-20" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2025-01-05" },
+    { "amount": 799.99, "category": "Electronics", "description": "New Smartphone", "date": "2025-01-15" },
+    { "amount": 105.00, "category": "Groceries", "description": "Groceries", "date": "2025-01-25" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2024-12-05" },
+    { "amount": 180.50, "category": "Groceries", "description": "Holiday season groceries", "date": "2024-12-22" },
+    { "amount": 200.00, "category": "Other", "description": "Holiday gifts", "date": "2024-12-15" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2024-11-05" },
+    { "amount": 95.00, "category": "Groceries", "description": "Groceries", "date": "2024-11-18" },
+    { "amount": 19.99, "category": "Entertainment", "description": "Streaming service subscription", "date": "2024-10-05" },
+    { "amount": 65.00, "category": "Entertainment", "description": "Concert tickets", "date": "2024-10-20" },
+    { "amount": 89.00, "category": "Groceries", "description": "Groceries", "date": "2024-09-10" },
+    { "amount": 450.00, "category": "Electronics", "description": "New TV", "date": "2024-08-15" },
+    { "amount": 112.00, "category": "Groceries", "description": "Groceries", "date": "2024-07-30" }
+  ]
+}

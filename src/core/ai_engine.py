@@ -1,5 +1,5 @@
 """
-AI Engine for Gemini 1.5 Pro API - Enhanced and robust version.
+AI Engine for Gemini 1.5 Pro API 
 
 Requirements:
     pip install --upgrade google-generativeai
@@ -28,12 +28,12 @@ if not API_KEY:
 
 try:
     genai.configure(api_key=API_KEY)
-    # Connection test
+    # --- Connection test ---
     model = genai.GenerativeModel(MODEL_NAME)
 except Exception as e:
     raise RuntimeError(f"Error configuring Gemini API: {e}")
 
-# Function to get current date dynamically
+# --- Function to get current date dynamically ---
 def get_current_date():
     """Get current date in YYYY-MM-DD format"""
     return datetime.now().strftime("%Y-%m-%d")
@@ -64,6 +64,10 @@ ARGUMENTS: {{"category": "<category>"}}
 FUNCTION_CALL: list_expenses_by_category
 ARGUMENTS: {{"category": "<category>"}}
 
+5. To refresh the dashboard view:
+FUNCTION_CALL: refresh_dashboard_ui
+ARGUMENTS: {{}}
+
 VALID CATEGORIES: "Groceries", "Electronics", "Entertainment", "Other"
 
 IMPORTANT:
@@ -90,6 +94,11 @@ Response:
 FUNCTION_CALL: delete_payment
 ARGUMENTS: {{"expense_id": 5}}
 
+User: "Refresh the dashboard"
+Response:
+FUNCTION_CALL: refresh_dashboard_ui
+ARGUMENTS: {{}}
+
 User: "Hello, how are you?"
 Response: Hello! I'm doing well, thanks. I'm your budget assistant. How can I help you today?
 """
@@ -107,9 +116,9 @@ def chat_completion(history: List[Tuple[str, str]]) -> Dict[str, Any]:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
 
-        # Prepare history in the format Gemini expects
+        # --- Prepare history in the format Gemini expects ---
         gemini_history = []
-        # Add system prompt as first message with current date
+        # --- Add system prompt as first message with current date ---
         system_prompt = get_system_prompt()
         gemini_history.append({
             "role": "user", 
@@ -120,7 +129,7 @@ def chat_completion(history: List[Tuple[str, str]]) -> Dict[str, Any]:
             "parts": ["Understood. I'm your budget assistant and I'm ready to help you manage your expenses."]
         })
 
-        # Convert history
+        # --- Convert history ---
         for role, content in history:
             gemini_role = "model" if role == "assistant" else "user"
             gemini_history.append({
@@ -131,21 +140,21 @@ def chat_completion(history: List[Tuple[str, str]]) -> Dict[str, Any]:
         if not gemini_history or gemini_history[-1]["role"] != "user":
             raise ValueError("History is empty or last message is not from user.")
 
-        # Extract the last user message
+        # --- Extract the last user message ---
         last_message = gemini_history.pop()
 
-        # Create chat with previous history
+        # --- Create chat with previous history ---
         chat = model.start_chat(history=gemini_history)
 
-        # Send the new user message
+        # --- Send the new user message ---
         response = chat.send_message(last_message["parts"][0])
         reply_text = response.text.strip()
 
-        # Detect if it's a function call
+        # --- Detect if it's a function call ---
         if "FUNCTION_CALL:" in reply_text and "ARGUMENTS:" in reply_text:
             return _parse_function_call(reply_text)
         else:
-            # Normal response
+            # --- Normal response ---
             return {
                 "type": "text",
                 "content": reply_text,
@@ -174,34 +183,33 @@ def _parse_function_call(text: str) -> Dict[str, Any]:
         Dict with type, name and arguments
     """
     try:
-        # Extract function name
+        # --- Extract function name ---
         function_match = re.search(r'FUNCTION_CALL:\s*(\w+)', text)
         if not function_match:
             raise ValueError("Function name not found")
         
         function_name = function_match.group(1)
-        
-        # Extract JSON arguments - improved regex
-        # Look for the JSON object after ARGUMENTS:
-        args_match = re.search(r'ARGUMENTS:\s*(\{[^}]+\})', text, re.DOTALL)
-        if not args_match:
-            raise ValueError("Arguments not found")
-        
-        args_json = args_match.group(1)
-        
-        # Clean up the JSON string
-        # Remove any newlines within the JSON
-        args_json = args_json.replace('\n', ' ')
-        
-        # Parse JSON
-        arguments = json.loads(args_json)
-        
-        # Validate function name
-        valid_functions = ["insert_payment", "delete_payment", "query_expenses_by_category", "list_expenses_by_category"]
+
+        # --- Validate function name ---
+        valid_functions = ["insert_payment", "delete_payment", "query_expenses_by_category", "list_expenses_by_category", "refresh_dashboard_ui"]
         if function_name not in valid_functions:
             raise ValueError(f"Invalid function: {function_name}")
         
-        # Validate arguments based on function
+        # --- Handle argument-less functions ---
+        if function_name == "refresh_dashboard_ui":
+            return {"type": "function_call", "name": "refresh_dashboard_ui", "arguments": {}}
+        
+        # --- For all other functions, proceed to find and parse arguments ---
+        args_match = re.search(r'ARGUMENTS:\s*(\{.*?\})', text, re.DOTALL) # Improved Regex
+        if not args_match:
+            raise ValueError("Arguments not found for a function that requires them.")
+        
+        args_json = args_match.group(1)
+        
+        args_json = args_match.group(1).replace('\n', ' ')
+        arguments = json.loads(args_json)
+        
+        # --- Validate arguments based on function ---
         if function_name == "insert_payment":
             if "amount" not in arguments:
                 raise ValueError("Missing 'amount' in arguments")
@@ -227,7 +235,6 @@ def _parse_function_call(text: str) -> Dict[str, Any]:
         elif function_name == "list_expenses_by_category":
             if "category" not in arguments:
                 raise ValueError("Missing 'category' in arguments")
-
         
         return {
             "type": "function_call",
@@ -255,7 +262,7 @@ def test_api_connection() -> bool:
     except Exception:
         return False
 
-# Additional helper functions
+# --- Additional helper functions ---
 def get_expense_insights(expenses_summary: Dict[str, float]) -> str:
     """Generate insights from expense summary"""
     if not expenses_summary:
@@ -264,7 +271,7 @@ def get_expense_insights(expenses_summary: Dict[str, float]) -> str:
     total = sum(expenses_summary.values())
     insights = [f"Total expenses: ${total:.2f}"]
     
-    # Find highest category
+    # --- Find highest category ---
     if expenses_summary:
         highest_category = max(expenses_summary.items(), key=lambda x: x[1])
         insights.append(f"Highest spending: {highest_category[0]} (${highest_category[1]:.2f})")
@@ -272,20 +279,20 @@ def get_expense_insights(expenses_summary: Dict[str, float]) -> str:
     return "\n".join(insights)
 
 if __name__ == "__main__":
-    # Basic test
+    # --- Basic test ---
     print("🤖 AI Engine Test")
     print(f"📅 Current date: {get_current_date()}")
     
     if test_api_connection():
         print("✅ Gemini API connection successful")
         
-        # Test chat
+        # --- Test chat ---
         test_history = [("user", "Hello, how are you?")]
         result = chat_completion(test_history)
         print(f"Test response type: {result['type']}")
         print(f"Test response content: {result['content'][:100]}...")
         
-        # Test function parsing
+        # --- Test function parsing ---
         test_history2 = [("user", "Record a $50 expense for groceries")]
         result2 = chat_completion(test_history2)
         print(f"\nFunction call test: {result2}")

@@ -8,36 +8,36 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
-# Configure logging
+# --- Configure logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create base
+# --- Create base ---
 Base = declarative_base()
 
-# SQLite setup with absolute paths
+# --- SQLite setup with absolute paths ---
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, os.pardir, os.pardir))
 DB_FILE = os.path.join(ROOT_DIR, 'budget_tracker.db')
 
-# Create directory if it doesn't exist
+# --- Create directory if it doesn't exist ---
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 DATABASE_URL = f"sqlite:///{DB_FILE}"
 
-# Engine with optimized configuration
+# --- Engine with optimized configuration ---
 engine = create_engine(
     DATABASE_URL,
     connect_args={
         "check_same_thread": False,
         "timeout": 30,
     },
-    echo=False,  # Change to True for SQL debug
+    echo=False,  # --- Change to True for SQL debug ---
     pool_pre_ping=True,
     pool_recycle=3600,
 )
 
-# Enable WAL mode for SQLite (better concurrency)
+# --- Enable WAL mode for SQLite (better concurrency) ---
 @event.listens_for(engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -52,7 +52,7 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-# Import models after Base and engine creation
+# --- Import models after Base and engine creation ---
 from .models import Budget, Expense
 
 @contextmanager
@@ -73,91 +73,15 @@ def get_db_session():
     finally:
         session.close()
 
-def init_db(create_sample_data: bool = False) -> None:
-    """Create tables if they don't exist."""
+def init_db() -> None:
+    """Create all database tables if they don't exist."""
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("Database initialized successfully")
-        
-        # Create sample data if it's requested only 
-        if create_sample_data:
-            with get_db_session() as session:
-                if session.query(Budget).count() == 0:
-                    _create_sample_data(session)
-                
+        logger.info("Database tables checked/created successfully.")
     except Exception as e:
-        logger.error(f"Error initializing database: {e}")
+        logger.error(f"Error initializing database tables: {e}")
         raise
 
-def _create_sample_data(session):
-    """Create sample data for demonstration."""
-    try:
-        # Default budgets
-        default_budgets = [
-            Budget(category="total", limit=2000.0),
-            Budget(category="groceries", limit=600.0),
-            Budget(category="entertainment", limit=300.0),
-            Budget(category="electronics", limit=500.0),
-            Budget(category="other", limit=200.0),
-        ]
-        
-        for budget in default_budgets:
-            session.add(budget)
-        
-        # Some sample expenses with PAST dates and actuals (not future)
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-
-        sample_expenses = [
-            # On going month
-            Expense(
-                amount=50.0, 
-                category="Groceries", 
-                description="Weekly grocery shopping", 
-                date=datetime(current_year, current_month, 15)
-            ),
-            Expense(
-                amount=25.0, 
-                category="Entertainment", 
-                description="Movie theater", 
-                date=datetime(current_year, current_month, 20)
-            ),
-            # Past month
-            Expense(
-                amount=120.0, 
-                category="Electronics", 
-                description="Headphones", 
-                date=datetime(current_year, max(1, current_month-1), 10)
-            ),
-            Expense(
-                amount=75.0, 
-                category="Groceries", 
-                description="Monthly shopping", 
-                date=datetime(current_year, max(1, current_month-1), 5)
-            ),
-            # 2 Months ago
-            Expense(
-                amount=40.0, 
-                category="Entertainment", 
-                description="Video game", 
-                date=datetime(current_year, max(1, current_month-2), 12)
-            ),
-            Expense(
-                amount=85.0, 
-                category="Other", 
-                description="Miscellaneous", 
-                date=datetime(current_year, max(1, current_month-2), 8)
-            ),
-        ]
-        
-        for expense in sample_expenses:
-            session.add(expense)
-            
-        logger.info("Sample data created")
-        
-    except Exception as e:
-        logger.error(f"Error creating sample data: {e}")
-        raise
 
 # ──────────────────────── BUDGET FUNCTIONS ────────────────────────
 
@@ -219,7 +143,7 @@ def add_expense(amount: float, category: str, description: str = "") -> None:
                 amount=amount,
                 category=category.capitalize(),
                 description=description.strip(),
-                date=datetime.now(),  # Use local time instead of UTC
+                date=datetime.now(),  
             )
             session.add(exp)
         
@@ -240,12 +164,12 @@ def update_expense(expense_id: int, new_data: Dict) -> bool:
             if not expense:
                 return False
             
-            # Actualizar campos del objeto expense con los nuevos datos
+            # --- refresh with new data ---
             for key, value in new_data.items():
                 if hasattr(expense, key):
                     setattr(expense, key, value)
             
-            # La fecha necesita un tratamiento especial si es un string
+            # --- if date == string --> special configuration ---
             if 'date' in new_data and isinstance(new_data['date'], str):
                 try:
                     expense.date = datetime.strptime(new_data['date'], '%Y-%m-%d')
@@ -253,7 +177,7 @@ def update_expense(expense_id: int, new_data: Dict) -> bool:
                     logger.warning(f"Invalid date format for update: {new_data['date']}. Keeping original.")
 
             logger.info(f"Expense updated: ID {expense_id}")
-            return True # El commit se hace automáticamente al salir del 'with'
+            return True 
             
     except Exception as e:
         logger.error(f"Error updating expense: {e}")
@@ -268,7 +192,7 @@ def get_all_expenses(limit: int = None, category: str = None, month: int = None,
             from sqlalchemy import extract
             query = session.query(Expense).order_by(Expense.date.desc())
 
-            # Aplicar filtros si se proporcionan
+            # --- Aplied filters if necesary ---
             if category and category.lower() != 'all':
                 query = query.filter(Expense.category == category)
             
@@ -347,12 +271,12 @@ def insert_payment(amount: float, category: str, description: str, date: str) ->
         if not category or not category.strip():
             raise ValueError("Category cannot be empty")
         
-        # Parse date
+        # --- Parse date ---
         if isinstance(date, str):
             try:
                 date_obj = datetime.strptime(date, "%Y-%m-%d")
             except ValueError:
-                # Other common formats
+                # --- Other common formats ---
                 try:
                     date_obj = datetime.strptime(date, "%d/%m/%Y")
                 except ValueError:
@@ -390,10 +314,10 @@ def insert_payment_safe(amount: float, category: str, description: str, date_str
     """
     from datetime import datetime
     
-    # Validate date
+    # --- Validate date ---
     try:
         if isinstance(date_str, str):
-            # Try multiple common formats
+            # --- Try multiple common formats ---
             date_formats = [
                 "%Y-%m-%d",      # 2025-01-15
                 "%d/%m/%Y",      # 15/01/2025
@@ -412,7 +336,7 @@ def insert_payment_safe(amount: float, category: str, description: str, date_str
                     continue
             
             if date_obj is None:
-                # If no format worked, use current date
+                # --- If no format worked, use current date ---
                 logger.warning(f"Could not parse date '{date_str}', using current date")
                 date_obj = datetime.utcnow()
         else:
@@ -426,8 +350,8 @@ def insert_payment_safe(amount: float, category: str, description: str, date_str
                 date=date_obj,
             )
             session.add(exp)
-            session.flush()  # Forces ID creation
-            session.expunge(exp)  # Detach from session before return
+            session.flush()  # --- Forces ID creation ---
+            session.expunge(exp)  # --- Detach from session before return ---
             return exp
         
     except Exception as e:
@@ -509,7 +433,7 @@ def check_database_health() -> bool:
     """Check that database is working properly."""
     try:
         with get_db_session() as session:
-            # Simple query to verify connectivity
+            # --- Simple query to verify connectivity ---
             session.execute("SELECT 1")
         return True
         
@@ -518,13 +442,13 @@ def check_database_health() -> bool:
         return False
 
 if __name__ == "__main__":
-    # Basic test
+    # --- Basic test ---
     try:
         init_db()
         if check_database_health():
             print("✅ Database working correctly")
             
-            # Show statistics
+            # --- Show statistics ---
             with get_db_session() as session:
                 expense_count = session.query(Expense).count()
                 budget_count = session.query(Budget).count()
