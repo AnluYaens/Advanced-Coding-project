@@ -143,12 +143,15 @@ Advanced Coding project/
 │   │       ├── contact.png
 │   │       ├── currency.png
 │   │       ├── dashboard.png
+│   │       ├── title_bag_coins.png
+│   │       ├── Budget_Trackr_Assistant.png
 │   │       └── set_budget.png
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── database.py                 # Database handling
 │   │   ├── models.py                   # SQLAlchemy models
-│   │   └── ai_engine.py                # Gemini AI integration
+│   │   ├── ai_engine.py                # Gemini AI integration
+│   │   └── seeder.py                   # Populate the database
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── bank_statement_loader.py    # CSV importer
