@@ -1,52 +1,47 @@
-# —— Entorno virtual ————————————————————————————————
+# —— Virtual Environment ————————————————————————————————
 venv/
-.env/         # a veces el entorno virtual se llama así
+.env/         
 .env
 .venv/
-# —— Bases de datos SQLite y derivados ————————————————————
-# Ignora cualquier fichero .db
+# —— Database ————————————————————
 *.db
-# También los archivos temporales de SQLite
 *.db-shm
 *.db-wal
 
-# —— Cachés y archivos compilados de Python ————————————
+# —— Pycaches, ect ————————————
 __pycache__/
 *.py[cod]     # .pyc, .pyo, .pyd
 *$py.class
 
-# —— Configuración local y logs ——————————————————————
-.env          # variables de entorno
-*.log         # logs
-# Cobertura de tests
+# —— Local configuration and logs ——————————————————————
+.env          
+*.log         
+# Tests
 .coverage
-htmlcov/      # informe HTML de cobertura
+htmlcov/      
 
 # —— Testing y linters ——————————————————————————
-.pytest_cache/       # caché de pytest
-.tox/                # entornos creados por tox
-.mypy_cache/         # caché de mypy
-.cache/              # cachés varios (pip, sonar, etc.)
+.pytest_cache/       
+.tox/                
+.mypy_cache/         
+.cache/              
 
-# —— Artefactos de distribución ——————————————————————
+# —— Distribution Artefacts ——————————————————————
 build/
 dist/
-*.egg-info/          # metadatos de paquetes
+*.egg-info/          
 pip-wheel-metadata/
 *.egg
 
-# —— Configuración de IDE (si aplica) ——————————————————
+# —— Configuration of IDE ——————————————————
 .vscode/
 .idea/
-# Otros editores
+# others editors
 *.swp       # swap de vim
 *.swo
 
-# —— Sistema operativo ——————————————————————————
+# —— Operative System ——————————————————————————
 .DS_Store   # macOS
 Thumbs.db   # Windows
 
-# —— Alembic ——————————————————————————
-alembic/
-alembic.ini
 
