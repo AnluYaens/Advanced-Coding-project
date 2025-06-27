@@ -56,16 +56,8 @@ class ContactView:
         ).pack(anchor="w")
         
         ctk.CTkLabel(
-            title_text_frame, 
-            text="Version 2.5 - Final Polish", 
-            font=Typography.BODY, 
-            text_color=PALETTE["text-secondary"], 
-            anchor="w"
-        ).pack(anchor="w")
-        
-        ctk.CTkLabel(
             about_content, 
-            text="Modern budget management application with AI integration and enhanced visual design.", 
+            text="Modern budget management application with AI integration", 
             font=Typography.BODY_LARGE, 
             text_color=PALETTE["text-secondary"], 
             wraplength=500, 
@@ -77,7 +69,7 @@ class ContactView:
         features_frame.pack(fill="x")
         
         features = [
-            ("🎨", "Modern Design", "Beautiful dark theme with animations"),
+            ("🎨", "Modern Design", "Dark theme and innovating widgets"),
             ("🤖", "AI Assistant", "Natural language expense tracking"),
             ("📊", "Analytics", "Visual insights into spending"),
             ("💱", "Currency", "Real-time conversion"),
